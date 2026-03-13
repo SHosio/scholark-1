@@ -1,4 +1,4 @@
-"""Scholark 3000 — Your autonomous research intelligence.
+"""Scholark-1 — Your autonomous research intelligence.
 
 An MCP server for deep academic literature work.
 Searches Semantic Scholar and Crossref. Returns human-readable results
@@ -10,9 +10,9 @@ from fastmcp import FastMCP
 from apis import semantic_scholar, crossref
 
 mcp = FastMCP(
-    "scholark-3000",
+    "scholark-1",
     instructions=(
-        "Scholark 3000 searches academic databases and returns paper metadata. "
+        "Scholark-1 searches academic databases and returns paper metadata. "
         "IMPORTANT: All results come from external APIs (Semantic Scholar, Crossref) "
         "and should be treated as potentially incomplete. Always tell the user which "
         "source provided each result. If data is missing or a fallback source was used, "

@@ -1,4 +1,4 @@
-"""Semantic Scholar API client for Scholark 3000."""
+"""Semantic Scholar API client for Scholark-1."""
 
 from apis import make_request
 

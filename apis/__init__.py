@@ -1,9 +1,9 @@
-"""Shared HTTP utilities for Scholark 3000 API clients."""
+"""Shared HTTP utilities for Scholark-1 API clients."""
 
 import httpx
 from typing import Any
 
-USER_AGENT = "scholark-3000/1.0 (academic-research-mcp)"
+USER_AGENT = "scholark-1/1.0 (academic-research-mcp)"
 
 
 async def make_request(

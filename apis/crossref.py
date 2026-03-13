@@ -1,4 +1,4 @@
-"""Crossref API client for Scholark 3000."""
+"""Crossref API client for Scholark-1."""
 
 import re
 from apis import make_request, make_request_text

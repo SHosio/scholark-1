@@ -1148,7 +1148,7 @@ wheels = [
 ]
 
 [[package]]
-name = "scholark-3000"
+name = "scholark-1"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
