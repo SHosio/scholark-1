@@ -1,50 +1,53 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
+from apis.errors import SourceUnavailable, RateLimited
 
 
 @pytest.mark.asyncio
 async def test_search_papers_combines_sources():
-    """search_papers should try Semantic Scholar first, then Crossref as fallback."""
-    with patch("apis.semantic_scholar.search", new_callable=AsyncMock) as ss_mock, \
-         patch("apis.crossref.search", new_callable=AsyncMock) as cr_mock:
-        ss_mock.return_value = "**Paper A**\n  [Source: Semantic Scholar]"
-        cr_mock.return_value = "**Paper B**\n  [Source: Crossref]"
+    """search_papers shows results from all three sources."""
+    with patch("apis.semantic_scholar.search", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search", new_callable=AsyncMock) as oa, \
+         patch("apis.crossref.search", new_callable=AsyncMock) as cr:
+        ss.return_value = "**Paper A**\n  [Source: Semantic Scholar]"
+        oa.return_value = "**Paper B**\n  [Source: OpenAlex]"
+        cr.return_value = "**Paper C**\n  [Source: Crossref]"
 
         from server import search_papers
         result = await search_papers("test query", limit=5)
         assert "Semantic Scholar" in result
+        assert "OpenAlex" in result
         assert "Crossref" in result
 
 
 @pytest.mark.asyncio
-async def test_search_papers_fallback_on_ss_failure():
-    """If Semantic Scholar fails, Crossref results still show."""
-    with patch("apis.semantic_scholar.search", new_callable=AsyncMock) as ss_mock, \
-         patch("apis.crossref.search", new_callable=AsyncMock) as cr_mock:
-        ss_mock.return_value = "Semantic Scholar returned no results or was unavailable."
-        cr_mock.return_value = "**Paper B**\n  [Source: Crossref]"
+async def test_search_papers_handles_source_failure():
+    """If one source fails, others still show."""
+    with patch("apis.semantic_scholar.search", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search", new_callable=AsyncMock) as oa, \
+         patch("apis.crossref.search", new_callable=AsyncMock) as cr:
+        ss.side_effect = RateLimited("Semantic Scholar")
+        oa.return_value = "**Paper B**\n  [Source: OpenAlex]"
+        cr.return_value = "**Paper C**\n  [Source: Crossref]"
 
         from server import search_papers
         result = await search_papers("test query")
+        assert "rate limit exceeded" in result
+        assert "OpenAlex" in result
         assert "Crossref" in result
 
 
 @pytest.mark.asyncio
-async def test_doi_to_bibtex():
-    with patch("apis.crossref.get_bibtex", new_callable=AsyncMock) as mock:
-        mock.return_value = "@article{Test}\n\n[Source: DOI content negotiation via doi.org]"
-        from server import doi_to_bibtex
-        result = await doi_to_bibtex("10.1234/test")
-        assert "@article" in result
-
-
-@pytest.mark.asyncio
-async def test_fetch_paper_details_fallback():
-    """If Semantic Scholar fails for a DOI, try Crossref."""
-    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss_mock, \
-         patch("apis.crossref.get_paper_details", new_callable=AsyncMock) as cr_mock:
-        ss_mock.return_value = "Could not fetch paper details for '10.1234/test' from Semantic Scholar."
-        cr_mock.return_value = "**Test Paper**\n  [Source: Crossref]"
+async def test_fetch_paper_details_fallback_chain():
+    """SS fails for a DOI → try OpenAlex → try Crossref."""
+    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.get_paper_details", new_callable=AsyncMock) as oa, \
+         patch("apis.crossref.get_paper_details", new_callable=AsyncMock) as cr, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        ss.side_effect = SourceUnavailable("Semantic Scholar", "no data")
+        oa.side_effect = SourceUnavailable("OpenAlex", "no data")
+        cr.return_value = "**Test Paper**\n  [Source: Crossref]"
 
         from server import fetch_paper_details
         result = await fetch_paper_details("10.1234/test")
@@ -52,10 +55,12 @@ async def test_fetch_paper_details_fallback():
 
 
 @pytest.mark.asyncio
-async def test_fetch_paper_details_no_crossref_for_non_doi():
-    """Non-DOI identifiers should not attempt Crossref fallback."""
-    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss_mock:
-        ss_mock.return_value = "Could not fetch paper details for 'abc123' from Semantic Scholar."
+async def test_fetch_paper_details_no_fallback_for_non_doi():
+    """Non-DOI identifiers skip OpenAlex/Crossref fallback."""
+    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        ss.side_effect = SourceUnavailable("Semantic Scholar", "no data")
 
         from server import fetch_paper_details
         result = await fetch_paper_details("abc123")
@@ -63,14 +68,53 @@ async def test_fetch_paper_details_no_crossref_for_non_doi():
 
 
 @pytest.mark.asyncio
-async def test_search_by_topic_with_fallback():
-    """search_by_topic falls back to Crossref when SS has no results."""
-    with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss_mock, \
-         patch("apis.crossref.search", new_callable=AsyncMock) as cr_mock:
-        ss_mock.return_value = "Semantic Scholar returned no results for this topic."
-        cr_mock.return_value = "**Paper C**\n  [Source: Crossref]"
+async def test_fetch_paper_details_cache_hit():
+    """Cache hit returns cached value without calling APIs."""
+    with patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = "**Cached Paper**\n  [Source: Semantic Scholar]"
+
+        from server import fetch_paper_details
+        result = await fetch_paper_details("10.1234/test")
+        assert "Cached Paper" in result
+
+
+@pytest.mark.asyncio
+async def test_doi_to_bibtex_with_cache():
+    """doi_to_bibtex checks cache, stores result on miss."""
+    with patch("apis.crossref.get_bibtex", new_callable=AsyncMock) as mock, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        mock.return_value = "@article{Test}\n\n[Source: DOI content negotiation via doi.org]"
+
+        from server import doi_to_bibtex
+        result = await doi_to_bibtex("10.1234/test")
+        assert "@article" in result
+        get_cache_mock.return_value.put.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_search_by_topic_fallback_chain():
+    """search_by_topic: SS → OpenAlex (with year filter) → Crossref."""
+    with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa:
+        ss.side_effect = RateLimited("Semantic Scholar")
+        oa.return_value = "**Paper B**\n  [Source: OpenAlex]"
 
         from server import search_by_topic
         result = await search_by_topic("HCI design", year_start=2020)
-        assert "Crossref" in result
-        assert "year filtering is not applied" in result
+        assert "OpenAlex" in result
+
+
+@pytest.mark.asyncio
+async def test_search_by_topic_crossref_fallback_notes_year_filter():
+    """Crossref fallback in search_by_topic warns about missing year filter."""
+    with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa, \
+         patch("apis.crossref.search", new_callable=AsyncMock) as cr:
+        ss.side_effect = SourceUnavailable("SS", "no results")
+        oa.side_effect = SourceUnavailable("OpenAlex", "no results")
+        cr.return_value = "**Paper C**\n  [Source: Crossref]"
+
+        from server import search_by_topic
+        result = await search_by_topic("HCI", year_start=2020)
+        assert "year filtering not applied" in result

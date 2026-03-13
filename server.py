@@ -1,19 +1,22 @@
 """Scholark-1 — Your autonomous research intelligence.
 
 An MCP server for deep academic literature work.
-Searches Semantic Scholar and Crossref. Returns human-readable results
+Searches Semantic Scholar, OpenAlex, and Crossref. Returns human-readable results
 with source attribution. All results should be manually verified.
 """
 
+import asyncio
 import re
 from fastmcp import FastMCP
-from apis import semantic_scholar, crossref
+from apis import semantic_scholar, crossref, openalex
+from apis.errors import SourceUnavailable
+from cache import CacheDB
 
 mcp = FastMCP(
     "scholark-1",
     instructions=(
         "Scholark-1 searches academic databases and returns paper metadata. "
-        "IMPORTANT: All results come from external APIs (Semantic Scholar, Crossref) "
+        "IMPORTANT: All results come from external APIs (Semantic Scholar, OpenAlex, Crossref) "
         "and should be treated as potentially incomplete. Always tell the user which "
         "source provided each result. If data is missing or a fallback source was used, "
         "say so explicitly. Never present these results as exhaustive — recommend the "
@@ -21,34 +24,45 @@ mcp = FastMCP(
     ),
 )
 
+# Lazy-initialized cache — avoids creating SQLite DB on import (important for tests)
+_cache: CacheDB | None = None
+
+
+def _get_cache() -> CacheDB:
+    global _cache
+    if _cache is None:
+        _cache = CacheDB()
+    return _cache
+
+
+async def _try_source(source_fn, name, query, limit):
+    """Try a search source, return formatted section string."""
+    try:
+        return f"=== {name} Results ===\n\n{await source_fn(query, limit)}"
+    except SourceUnavailable as e:
+        return f"=== {name} ===\n{name} unavailable ({e.reason})."
+
 
 @mcp.tool()
 async def search_papers(query: str, limit: int = 10) -> str:
-    """Search for academic papers across Semantic Scholar and Crossref.
+    """Search for academic papers across Semantic Scholar, OpenAlex, and Crossref.
 
-    Returns results from both sources with clear source attribution.
+    Returns results from all available sources with clear source attribution.
     Results may be incomplete — always verify important findings manually.
 
     Args:
         query: Search query (natural language or keywords)
         limit: Max results per source (default 10)
     """
-    sections = []
+    results = await asyncio.gather(
+        _try_source(semantic_scholar.search, "Semantic Scholar", query, limit),
+        _try_source(openalex.search, "OpenAlex", query, limit),
+        _try_source(crossref.search, "Crossref", query, limit),
+    )
 
-    ss_results = await semantic_scholar.search(query, limit=limit)
-    if "no results" not in ss_results.lower() and "unavailable" not in ss_results.lower():
-        sections.append(f"=== Semantic Scholar Results ===\n\n{ss_results}")
-    else:
-        sections.append(f"=== Semantic Scholar ===\n{ss_results}")
-
-    cr_results = await crossref.search(query, limit=limit)
-    if "no results" not in cr_results.lower() and "unavailable" not in cr_results.lower():
-        sections.append(f"=== Crossref Results ===\n\n{cr_results}")
-    else:
-        sections.append(f"=== Crossref ===\n{cr_results}")
-
+    sections = list(results)
     sections.append(
-        "---\nNote: Results come from Semantic Scholar and Crossref APIs. "
+        "---\nNote: Results come from Semantic Scholar, OpenAlex, and Crossref APIs. "
         "These may not be exhaustive. Verify important references manually."
     )
 
@@ -59,36 +73,51 @@ async def search_papers(query: str, limit: int = 10) -> str:
 async def fetch_paper_details(paper_id: str) -> str:
     """Get detailed metadata for a specific paper.
 
-    Tries Semantic Scholar first, falls back to Crossref if the paper_id is a DOI.
+    Tries Semantic Scholar first, falls back to OpenAlex and Crossref for DOIs.
     Results should be verified against the original publication.
 
     Args:
-        paper_id: DOI (e.g. '10.1234/test'), Semantic Scholar ID, or prefixed ID (e.g. 'DOI:10.1234/test')
+        paper_id: DOI (e.g. '10.1234/test'), Semantic Scholar ID, or prefixed ID
     """
-    ss_result = await semantic_scholar.get_paper_details(paper_id)
+    # Normalize DOI for cache lookup
+    is_doi = bool(re.match(r"^10\.\d{4,}/", paper_id))
+    normalized_id = crossref.normalize_doi(paper_id) if is_doi else paper_id
+    cache = _get_cache()
 
-    if "could not fetch" not in ss_result.lower():
-        return ss_result + (
-            "\n\n---\nNote: Data from Semantic Scholar. Verify against the original publication."
-        )
+    # Check cache for DOI-shaped identifiers
+    if is_doi:
+        cached = cache.get(f"paper_details:{normalized_id}")
+        if cached:
+            return cached + "\n\n---\nNote: Cached result. Verify against the original publication."
 
-    # Fallback to Crossref only if it looks like a DOI
-    if not re.match(r"^10\.\d{4,}/", paper_id):
+    # Try Semantic Scholar first
+    try:
+        result = await semantic_scholar.get_paper_details(paper_id)
+        if is_doi:
+            cache.put(f"paper_details:{normalized_id}", result, "Semantic Scholar")
+        return result + "\n\n---\nNote: Data from Semantic Scholar. Verify against the original publication."
+    except SourceUnavailable:
+        pass
+
+    # Non-DOI identifiers: no fallback
+    if not is_doi:
         return (
             f"Could not find paper '{paper_id}' in Semantic Scholar.\n"
-            "This doesn't look like a DOI, so Crossref fallback was skipped.\n"
+            "This doesn't look like a DOI, so fallback was skipped.\n"
             "Try using a DOI or Semantic Scholar paper ID."
         )
 
-    cr_result = await crossref.get_paper_details(paper_id)
-    if "could not fetch" not in cr_result.lower():
-        return (
-            f"(Semantic Scholar was unavailable for this paper — showing Crossref data)\n\n"
-            f"{cr_result}\n\n---\nNote: Data from Crossref fallback. Verify against the original publication."
-        )
+    # DOI fallback: OpenAlex → Crossref
+    for source_fn, name in [(openalex.get_paper_details, "OpenAlex"), (crossref.get_paper_details, "Crossref")]:
+        try:
+            result = await source_fn(normalized_id)
+            cache.put(f"paper_details:{normalized_id}", result, name)
+            return result + f"\n\n---\nNote: Data from {name} (fallback). Verify against the original publication."
+        except SourceUnavailable:
+            continue
 
     return (
-        f"Could not find paper '{paper_id}' in either Semantic Scholar or Crossref.\n"
+        f"Could not find paper '{paper_id}' in any source.\n"
         "Please check the identifier and try again."
     )
 
@@ -102,8 +131,8 @@ async def search_by_topic(
 ) -> str:
     """Search for papers by topic with optional year range filtering.
 
-    Uses Semantic Scholar with full metadata fields. Falls back to Crossref
-    if Semantic Scholar is unavailable. Results should be verified manually.
+    Tries Semantic Scholar first (year filtering supported), then OpenAlex
+    (year filtering supported), then Crossref (no year filtering).
 
     Args:
         topic: Research topic or keywords
@@ -111,27 +140,45 @@ async def search_by_topic(
         year_end: End year filter (optional)
         limit: Max results (default 10)
     """
-    ss_result = await semantic_scholar.search_by_topic(
-        topic, year_start=year_start, year_end=year_end, limit=limit
-    )
-
-    if "no results" not in ss_result.lower():
-        return ss_result + (
+    # Try Semantic Scholar
+    try:
+        result = await semantic_scholar.search_by_topic(
+            topic, year_start=year_start, year_end=year_end, limit=limit
+        )
+        return result + (
             "\n\n---\nNote: Results from Semantic Scholar. "
             "May not be exhaustive — verify important references."
         )
+    except SourceUnavailable:
+        pass
 
-    # Fallback to Crossref (no year filtering available via simple search)
-    cr_result = await crossref.search(topic, limit=limit)
-    fallback_note = "(Semantic Scholar had no results — falling back to Crossref"
-    if year_start or year_end:
-        fallback_note += ". Note: year filtering is not applied to Crossref fallback results"
-    fallback_note += ")"
+    # Try OpenAlex (supports year filtering)
+    try:
+        result = await openalex.search_by_topic(
+            topic, year_start=year_start, year_end=year_end, limit=limit
+        )
+        return (
+            f"(OpenAlex fallback)\n\n{result}\n\n---\n"
+            "Note: Results from OpenAlex fallback. Verify important references."
+        )
+    except SourceUnavailable:
+        pass
 
-    return (
-        f"{fallback_note}\n\n{cr_result}\n\n---\n"
-        "Note: Results from Crossref fallback. Verify important references."
-    )
+    # Try Crossref (no year filtering)
+    try:
+        result = await crossref.search(topic, limit=limit)
+        note = "(Crossref fallback"
+        if year_start or year_end:
+            note += " — year filtering not applied"
+        note += ")"
+        return (
+            f"{note}\n\n{result}\n\n---\n"
+            "Note: Results from Crossref fallback. Verify important references."
+        )
+    except SourceUnavailable:
+        pass
+
+    return "No sources returned results for this topic."
 
 
 @mcp.tool()
@@ -141,13 +188,24 @@ async def doi_to_bibtex(doi: str) -> str:
     Accepts DOI in various formats: bare (10.1234/test), URL (https://doi.org/10.1234/test),
     or prefixed (doi:10.1234/test).
 
-    The BibTeX is fetched directly from doi.org — it reflects what the publisher registered.
-    Always double-check that the BibTeX fields match your reference manager's expectations.
-
     Args:
         doi: The DOI to look up
     """
-    return await crossref.get_bibtex(doi)
+    normalized = crossref.normalize_doi(doi)
+    if not normalized:
+        return "Please provide a DOI."
+
+    cache = _get_cache()
+    cached = cache.get(f"bibtex:{normalized}")
+    if cached:
+        return cached
+
+    try:
+        result = await crossref.get_bibtex(doi)
+        cache.put(f"bibtex:{normalized}", result, "crossref")
+        return result
+    except SourceUnavailable as e:
+        return f"Could not retrieve BibTeX for DOI '{normalized}'. {e.reason}"
 
 
 if __name__ == "__main__":
