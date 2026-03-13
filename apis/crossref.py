@@ -1,7 +1,9 @@
 """Crossref API client for Scholark-1."""
 
 import re
+import httpx
 from apis import make_request, make_request_text
+from apis.errors import SourceUnavailable, RateLimited
 
 BASE_URL = "https://api.crossref.org/works"
 
@@ -39,38 +41,7 @@ def format_paper(item: dict) -> str:
     return "\n".join(lines)
 
 
-async def search(query: str, limit: int = 10) -> str:
-    """Search Crossref for papers."""
-    if not query.strip():
-        return "Please provide a search query."
-
-    data = await make_request(
-        BASE_URL,
-        params={"query": query, "rows": limit},
-    )
-
-    if not data or "items" not in data.get("message", {}):
-        return "Crossref returned no results or was unavailable."
-
-    items = data["message"]["items"]
-    if not items:
-        return "Crossref returned no results for this query."
-
-    results = [format_paper(item) for item in items]
-    return "\n\n".join(results)
-
-
-async def get_paper_details(doi: str) -> str:
-    """Fetch detailed metadata for a paper by DOI from Crossref."""
-    data = await make_request(f"{BASE_URL}/{doi}")
-
-    if not data or "message" not in data:
-        return f"Could not fetch details for DOI '{doi}' from Crossref."
-
-    return format_paper(data["message"])
-
-
-def _normalize_doi(doi_input: str) -> str:
+def normalize_doi(doi_input: str) -> str:
     """Extract bare DOI from various formats: URL, doi: prefix, bare."""
     doi = doi_input.strip()
     doi = re.sub(r"^https?://doi\.org/", "", doi)
@@ -78,18 +49,59 @@ def _normalize_doi(doi_input: str) -> str:
     return doi
 
 
+async def _call_api(url, params=None):
+    """Call make_request, translate HTTP errors to custom exceptions."""
+    try:
+        return await make_request(url, params=params)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise RateLimited("Crossref")
+        raise SourceUnavailable("Crossref", f"HTTP {e.response.status_code}")
+
+
+async def search(query: str, limit: int = 10) -> str:
+    """Search Crossref for papers."""
+    if not query.strip():
+        raise SourceUnavailable("Crossref", "empty query")
+
+    data = await _call_api(BASE_URL, params={"query": query, "rows": limit})
+
+    if not data or "items" not in data.get("message", {}):
+        raise SourceUnavailable("Crossref", "no results or unavailable")
+
+    items = data["message"]["items"]
+    if not items:
+        raise SourceUnavailable("Crossref", "no results")
+
+    results = [format_paper(item) for item in items]
+    return "\n\n".join(results)
+
+
+async def get_paper_details(doi: str) -> str:
+    """Fetch detailed metadata for a paper by DOI from Crossref."""
+    data = await _call_api(f"{BASE_URL}/{doi}")
+
+    if not data or "message" not in data:
+        raise SourceUnavailable("Crossref", f"no data for DOI '{doi}'")
+
+    return format_paper(data["message"])
+
+
 async def get_bibtex(doi_input: str) -> str:
     """Fetch BibTeX for a DOI via content negotiation with doi.org."""
-    doi = _normalize_doi(doi_input)
+    doi = normalize_doi(doi_input)
     if not doi:
-        return "Please provide a DOI."
+        raise SourceUnavailable("Crossref", "empty DOI")
 
     url = f"https://doi.org/{doi}"
-    bibtex = await make_request_text(
-        url, accept="application/x-bibtex"
-    )
+    try:
+        bibtex = await make_request_text(url, accept="application/x-bibtex")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise RateLimited("Crossref")
+        raise SourceUnavailable("Crossref", f"HTTP {e.response.status_code}")
 
     if not bibtex:
-        return f"Could not retrieve BibTeX for DOI '{doi}'. The DOI may be invalid or the service may be temporarily unavailable."
+        raise SourceUnavailable("Crossref", f"no BibTeX for DOI '{doi}'")
 
     return f"{bibtex.strip()}\n\n[Source: DOI content negotiation via doi.org]"

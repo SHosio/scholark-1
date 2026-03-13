@@ -1,6 +1,8 @@
 import pytest
+import httpx
 from unittest.mock import AsyncMock, patch
-from apis.crossref import search, get_paper_details, get_bibtex, format_paper, _normalize_doi
+from apis.crossref import search, get_paper_details, get_bibtex, format_paper, normalize_doi
+from apis.errors import SourceUnavailable
 
 
 def _fake_crossref_item():
@@ -19,19 +21,19 @@ def _fake_crossref_item():
 
 
 def test_normalize_doi_bare():
-    assert _normalize_doi("10.1234/test") == "10.1234/test"
+    assert normalize_doi("10.1234/test") == "10.1234/test"
 
 
 def test_normalize_doi_url():
-    assert _normalize_doi("https://doi.org/10.1234/test") == "10.1234/test"
+    assert normalize_doi("https://doi.org/10.1234/test") == "10.1234/test"
 
 
 def test_normalize_doi_prefix():
-    assert _normalize_doi("doi: 10.1234/test") == "10.1234/test"
+    assert normalize_doi("doi: 10.1234/test") == "10.1234/test"
 
 
 def test_normalize_doi_http_url():
-    assert _normalize_doi("http://doi.org/10.1234/test") == "10.1234/test"
+    assert normalize_doi("http://doi.org/10.1234/test") == "10.1234/test"
 
 
 def test_format_paper_includes_source():
@@ -65,11 +67,12 @@ async def test_search_returns_formatted():
 
 
 @pytest.mark.asyncio
-async def test_search_failure():
+async def test_search_failure_raises():
     with patch("apis.crossref.make_request", new_callable=AsyncMock) as mock:
         mock.return_value = None
-        result = await search("test")
-        assert "No results" in result or "unavailable" in result.lower()
+        with pytest.raises(SourceUnavailable) as exc_info:
+            await search("test")
+        assert exc_info.value.source == "Crossref"
 
 
 @pytest.mark.asyncio
@@ -83,8 +86,8 @@ async def test_get_bibtex_success():
 
 
 @pytest.mark.asyncio
-async def test_get_bibtex_failure():
+async def test_get_bibtex_failure_raises():
     with patch("apis.crossref.make_request_text", new_callable=AsyncMock) as mock:
         mock.return_value = None
-        result = await get_bibtex("10.1234/bad")
-        assert "Could not" in result
+        with pytest.raises(SourceUnavailable):
+            await get_bibtex("10.1234/bad")
