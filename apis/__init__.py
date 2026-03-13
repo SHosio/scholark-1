@@ -1,0 +1,57 @@
+"""Shared HTTP utilities for Scholark 3000 API clients."""
+
+import httpx
+from typing import Any
+
+USER_AGENT = "scholark-3000/1.0 (academic-research-mcp)"
+
+
+async def make_request(
+    url: str,
+    headers: dict | None = None,
+    params: dict | None = None,
+    accept: str = "application/json",
+) -> dict[str, Any] | None:
+    """Make an HTTP GET request with error handling.
+
+    Returns parsed JSON on success, None on any failure.
+    Callers must handle None gracefully — this is part of the fallback chain.
+    """
+    default_headers = {"User-Agent": USER_AGENT, "Accept": accept}
+    if headers:
+        default_headers.update(headers)
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                url, headers=default_headers, params=params, timeout=30.0
+            )
+            response.raise_for_status()
+            result = response.json()
+            if hasattr(result, "__await__"):
+                result = await result
+            return result
+        except (httpx.HTTPError, ValueError):
+            return None
+
+
+async def make_request_text(
+    url: str,
+    headers: dict | None = None,
+    params: dict | None = None,
+    accept: str = "text/plain",
+) -> str | None:
+    """Make an HTTP GET request, return raw text. Used for BibTeX content negotiation."""
+    default_headers = {"User-Agent": USER_AGENT, "Accept": accept}
+    if headers:
+        default_headers.update(headers)
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        try:
+            response = await client.get(
+                url, headers=default_headers, params=params, timeout=30.0
+            )
+            response.raise_for_status()
+            return response.text
+        except (httpx.HTTPError, ValueError):
+            return None
