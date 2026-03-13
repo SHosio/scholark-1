@@ -10,7 +10,7 @@ async def test_make_request_success():
     mock_response = AsyncMock()
     mock_response.status_code = 200
     mock_response.raise_for_status = lambda: None
-    mock_response.json.return_value = {"data": "test"}
+    mock_response.json = lambda: {"data": "test"}
 
     with patch("apis.httpx.AsyncClient") as mock_client:
         instance = AsyncMock()

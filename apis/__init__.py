@@ -27,10 +27,7 @@ async def make_request(
                 url, headers=default_headers, params=params, timeout=30.0
             )
             response.raise_for_status()
-            result = response.json()
-            if hasattr(result, "__await__"):
-                result = await result
-            return result
+            return response.json()
         except (httpx.HTTPError, ValueError):
             return None
 
