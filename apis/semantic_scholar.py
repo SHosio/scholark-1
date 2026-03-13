@@ -1,6 +1,8 @@
 """Semantic Scholar API client for Scholark-1."""
 
+import httpx
 from apis import make_request
+from apis.errors import SourceUnavailable, RateLimited
 
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
 
@@ -43,21 +45,31 @@ def format_paper(paper: dict) -> str:
     return "\n".join(lines)
 
 
+async def _call_api(url, params):
+    """Call make_request, translate HTTP errors to custom exceptions."""
+    try:
+        return await make_request(url, params=params)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise RateLimited("Semantic Scholar")
+        raise SourceUnavailable("Semantic Scholar", f"HTTP {e.response.status_code}")
+
+
 async def search(query: str, limit: int = 10) -> str:
     """Search Semantic Scholar for papers matching query."""
     if not query.strip():
-        return "Please provide a search query."
+        raise SourceUnavailable("Semantic Scholar", "empty query")
 
     truncated = len(query) > 300
     q = query[:300] if truncated else query
 
-    data = await make_request(
+    data = await _call_api(
         f"{BASE_URL}/paper/search",
         params={"query": q, "limit": limit, "fields": SEARCH_FIELDS},
     )
 
     if not data or "data" not in data or not data["data"]:
-        return "Semantic Scholar returned no results or was unavailable."
+        raise SourceUnavailable("Semantic Scholar", "no results")
 
     results = []
     if truncated:
@@ -70,13 +82,13 @@ async def search(query: str, limit: int = 10) -> str:
 
 async def get_paper_details(paper_id: str) -> str:
     """Fetch detailed metadata for a specific paper."""
-    data = await make_request(
+    data = await _call_api(
         f"{BASE_URL}/paper/{paper_id}",
         params={"fields": SEARCH_FIELDS},
     )
 
     if not data:
-        return f"Could not fetch paper details for '{paper_id}' from Semantic Scholar."
+        raise SourceUnavailable("Semantic Scholar", f"no data for '{paper_id}'")
 
     return format_paper(data)
 
@@ -86,7 +98,7 @@ async def search_by_topic(
 ) -> str:
     """Search by topic with optional year filtering."""
     if not topic.strip():
-        return "Please provide a topic."
+        raise SourceUnavailable("Semantic Scholar", "empty topic")
 
     truncated = len(topic) > 300
     q = topic[:300] if truncated else topic
@@ -99,10 +111,10 @@ async def search_by_topic(
     elif year_end is not None:
         params["year"] = f"-{year_end}"
 
-    data = await make_request(f"{BASE_URL}/paper/search", params=params)
+    data = await _call_api(f"{BASE_URL}/paper/search", params=params)
 
     if not data or "data" not in data or not data["data"]:
-        return "Semantic Scholar returned no results for this topic."
+        raise SourceUnavailable("Semantic Scholar", "no results for this topic")
 
     results = []
     if truncated:

@@ -1,6 +1,8 @@
 import pytest
+import httpx
 from unittest.mock import AsyncMock, patch
 from apis.semantic_scholar import search, get_paper_details, search_by_topic, format_paper
+from apis.errors import SourceUnavailable, RateLimited
 
 
 def _fake_paper():
@@ -55,11 +57,25 @@ async def test_search_returns_formatted_results():
 
 
 @pytest.mark.asyncio
-async def test_search_api_failure_returns_error():
+async def test_search_api_failure_raises():
     with patch("apis.semantic_scholar.make_request", new_callable=AsyncMock) as mock:
         mock.return_value = None
-        result = await search("spaced repetition")
-        assert "No results" in result or "unavailable" in result.lower()
+        with pytest.raises(SourceUnavailable) as exc_info:
+            await search("spaced repetition")
+        assert exc_info.value.source == "Semantic Scholar"
+
+
+@pytest.mark.asyncio
+async def test_search_rate_limit_raises():
+    mock_response = AsyncMock()
+    mock_response.status_code = 429
+    with patch("apis.semantic_scholar.make_request", new_callable=AsyncMock) as mock:
+        mock.side_effect = httpx.HTTPStatusError(
+            "429", request=AsyncMock(), response=mock_response
+        )
+        with pytest.raises(RateLimited) as exc_info:
+            await search("spaced repetition")
+        assert exc_info.value.source == "Semantic Scholar"
 
 
 @pytest.mark.asyncio
