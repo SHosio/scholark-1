@@ -14,8 +14,9 @@ async def make_request(
 ) -> dict[str, Any] | None:
     """Make an HTTP GET request with error handling.
 
-    Returns parsed JSON on success, None on any failure.
-    Callers must handle None gracefully — this is part of the fallback chain.
+    Returns parsed JSON on success, None on connection/timeout failures.
+    Raises httpx.HTTPStatusError on HTTP error responses (4xx, 5xx)
+    so callers can inspect status codes.
     """
     default_headers = {"User-Agent": USER_AGENT, "Accept": accept}
     if headers:
@@ -28,6 +29,8 @@ async def make_request(
             )
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError:
+            raise
         except (httpx.HTTPError, ValueError):
             return None
 
@@ -38,7 +41,11 @@ async def make_request_text(
     params: dict | None = None,
     accept: str = "text/plain",
 ) -> str | None:
-    """Make an HTTP GET request, return raw text. Used for BibTeX content negotiation."""
+    """Make an HTTP GET request, return raw text. Used for BibTeX content negotiation.
+
+    Raises httpx.HTTPStatusError on HTTP error responses (4xx, 5xx).
+    Returns None on connection/timeout failures.
+    """
     default_headers = {"User-Agent": USER_AGENT, "Accept": accept}
     if headers:
         default_headers.update(headers)
@@ -50,5 +57,7 @@ async def make_request_text(
             )
             response.raise_for_status()
             return response.text
+        except httpx.HTTPStatusError:
+            raise
         except (httpx.HTTPError, ValueError):
             return None

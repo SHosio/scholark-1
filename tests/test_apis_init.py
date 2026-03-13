@@ -24,13 +24,29 @@ async def test_make_request_success():
 
 
 @pytest.mark.asyncio
-async def test_make_request_failure_returns_none():
-    """make_request returns None on HTTP error."""
+async def test_make_request_http_error_raises():
+    """make_request raises httpx.HTTPStatusError on HTTP errors."""
+    mock_response = AsyncMock()
+    mock_response.status_code = 429
     with patch("apis.httpx.AsyncClient") as mock_client:
         instance = AsyncMock()
         instance.get.side_effect = httpx.HTTPStatusError(
-            "404", request=AsyncMock(), response=AsyncMock()
+            "429", request=AsyncMock(), response=mock_response
         )
+        instance.__aenter__ = AsyncMock(return_value=instance)
+        instance.__aexit__ = AsyncMock(return_value=False)
+        mock_client.return_value = instance
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await make_request("https://example.com/api")
+
+
+@pytest.mark.asyncio
+async def test_make_request_connection_error_returns_none():
+    """make_request returns None on connection failures."""
+    with patch("apis.httpx.AsyncClient") as mock_client:
+        instance = AsyncMock()
+        instance.get.side_effect = httpx.ConnectError("connection refused")
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=False)
         mock_client.return_value = instance
@@ -60,13 +76,31 @@ async def test_make_request_text_success():
 
 @pytest.mark.asyncio
 async def test_make_request_text_failure_returns_none():
-    """make_request_text returns None on HTTP error."""
+    """make_request_text returns None on connection error."""
     with patch("apis.httpx.AsyncClient") as mock_client:
         instance = AsyncMock()
-        instance.get.side_effect = httpx.HTTPError("fail")
+        instance.get.side_effect = httpx.ConnectError("fail")
         instance.__aenter__ = AsyncMock(return_value=instance)
         instance.__aexit__ = AsyncMock(return_value=False)
         mock_client.return_value = instance
 
         result = await make_request_text("https://doi.org/10.1234/bad")
         assert result is None
+
+
+@pytest.mark.asyncio
+async def test_make_request_text_http_error_raises():
+    """make_request_text raises httpx.HTTPStatusError on HTTP errors."""
+    mock_response = AsyncMock()
+    mock_response.status_code = 429
+    with patch("apis.httpx.AsyncClient") as mock_client:
+        instance = AsyncMock()
+        instance.get.side_effect = httpx.HTTPStatusError(
+            "429", request=AsyncMock(), response=mock_response
+        )
+        instance.__aenter__ = AsyncMock(return_value=instance)
+        instance.__aexit__ = AsyncMock(return_value=False)
+        mock_client.return_value = instance
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await make_request_text("https://doi.org/10.1234/test")
