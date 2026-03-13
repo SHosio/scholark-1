@@ -130,44 +130,20 @@ body::after {
   animation: fadeUp 0.8s ease forwards 0.5s;
 }
 
-.ascii-art {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(5px, 1.15vw, 11px);
-  line-height: 1.2;
-  white-space: pre;
-  display: inline-block;
-  color: var(--green);
-  text-shadow: 0 0 10px var(--green-glow), 0 0 40px rgba(0,255,65,0.05);
+.entity-icon {
+  font-size: clamp(60px, 10vw, 100px);
+  line-height: 1;
   animation: entity-breathe 4s ease-in-out infinite;
-  position: relative;
+  filter: grayscale(1) brightness(0.8) sepia(1) hue-rotate(70deg) saturate(5);
 }
 
 @keyframes entity-breathe {
   0%, 100% {
-    text-shadow: 0 0 10px var(--green-glow), 0 0 40px rgba(0,255,65,0.05);
-    filter: brightness(1);
+    filter: grayscale(1) brightness(0.8) sepia(1) hue-rotate(70deg) saturate(5) drop-shadow(0 0 10px var(--green-glow));
   }
   50% {
-    text-shadow: 0 0 20px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1), 0 0 100px rgba(0,255,65,0.05);
-    filter: brightness(1.15);
+    filter: grayscale(1) brightness(1) sepia(1) hue-rotate(70deg) saturate(6) drop-shadow(0 0 30px rgba(0,255,65,0.3));
   }
-}
-
-/* Eye glow animation */
-.eye-left, .eye-right {
-  display: inline;
-  color: var(--green);
-  animation: eye-pulse 3s ease-in-out infinite;
-}
-
-.eye-right {
-  animation-delay: 0.15s;
-}
-
-@keyframes eye-pulse {
-  0%, 100% { color: var(--green); text-shadow: 0 0 8px var(--green); }
-  30% { color: #ffffff; text-shadow: 0 0 20px var(--green), 0 0 40px var(--green); }
-  60% { color: var(--green); text-shadow: 0 0 8px var(--green); }
 }
 
 /* Boot sequence */
@@ -539,42 +515,9 @@ body::after {
     <div>BUILD 1.0.0</div>
   </div>
 
-  <!-- ASCII Entity -->
+  <!-- Entity -->
   <div class="ascii-entity">
-    <pre class="ascii-art" id="ascii-robot">
-                         _______________
-                    ____/               \____
-                   /    |  +---------+  |    \
-                  /     |  |         |  |     \
-                 |   ___| .|_________| .|___   |
-                 |  /   '=-    ___    -='   \  |
-                 | |         .'   '.         | |
-                 | |   <span class="eye-left">(@)</span>  :     :  <span class="eye-right">(@)</span>   | |
-                 | |         '.___.'         | |
-                 | |    _                _   | |
-                 |  \  |_|   .=====.   |_| /   |
-                 |   '-.___  |  S  |  ___.-'   |
-                 |         '-|  1  |-'         |
-                  \          '====='          /
-                   \    .-.          .-.    /
-                    '--'|  |  ____  |  |'--'
-                       _|  |_/    \_|  |_
-                      |____|  ||||  |____|
-                         |    ||||    |
-                    _____|    ||||    |_____
-                   /     |    ||||    |     \
-                  |  .---|    ||||    |---.  |
-                  |  |   |____________|   |  |
-                  |  |   /  |      |  \   |  |
-                  |  |  /   |      |   \  |  |
-                  '--' /    |      |    \ '--'
-                      |_____|      |_____|
-                      |     |      |     |
-                      |     |      |     |
-                      |_____|      |_____|
-                     /______\    /______\
-    </pre>
-
+    <div class="entity-icon">&#x1F916;</div>
     <div id="boot-sequence" style="margin-top: 16px;"></div>
   </div>
 
@@ -646,10 +589,10 @@ body::after {
   <div class="cta-section">
     <div class="cta-box">
       <div class="cta-text">
-        Open source. MCP-native. Built for agents and researchers.<br>
-        Install in one command.
+        MCP-native research intelligence. Built for agents and researchers.<br>
+        $5/mo. Unlimited queries. No setup.
       </div>
-      <a href="https://github.com/SHosio/scholark-1" target="_blank" class="cta-command">git clone scholark-1</a>
+      <a href="#" class="cta-command">initialize scholark-1</a>
     </div>
   </div>
 
