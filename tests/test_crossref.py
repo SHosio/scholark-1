@@ -79,7 +79,7 @@ async def test_get_bibtex_success():
         mock.return_value = fake_bibtex
         result = await get_bibtex("10.1234/test.2021")
         assert "@article" in result
-        assert "[Source: DOI content negotiation]" in result
+        assert "[Source: DOI content negotiation via doi.org]" in result
 
 
 @pytest.mark.asyncio

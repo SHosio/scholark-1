@@ -92,4 +92,4 @@ async def get_bibtex(doi_input: str) -> str:
     if not bibtex:
         return f"Could not retrieve BibTeX for DOI '{doi}'. The DOI may be invalid or the service may be temporarily unavailable."
 
-    return f"{bibtex.strip()}\n\n[Source: DOI content negotiation]"
+    return f"{bibtex.strip()}\n\n[Source: DOI content negotiation via doi.org]"
