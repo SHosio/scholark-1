@@ -1,5 +1,6 @@
 """Semantic Scholar API client for Scholark-1."""
 
+import os
 import httpx
 from apis import make_request
 from apis.errors import SourceUnavailable, RateLimited
@@ -45,10 +46,18 @@ def format_paper(paper: dict) -> str:
     return "\n".join(lines)
 
 
+def _get_headers():
+    """Build request headers, including API key if available."""
+    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+    if api_key:
+        return {"x-api-key": api_key}
+    return None
+
+
 async def _call_api(url, params):
     """Call make_request, translate HTTP errors to custom exceptions."""
     try:
-        return await make_request(url, params=params)
+        return await make_request(url, params=params, headers=_get_headers())
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 429:
             raise RateLimited("Semantic Scholar")
@@ -91,6 +100,63 @@ async def get_paper_details(paper_id: str) -> str:
         raise SourceUnavailable("Semantic Scholar", f"no data for '{paper_id}'")
 
     return format_paper(data)
+
+
+CITATION_FIELDS = "title,authors,year,externalIds,venue,contexts"
+
+
+async def get_citation_context(paper_id: str, limit: int = 10) -> str:
+    """Fetch citing papers and the sentences where they cite this paper."""
+    data = await _call_api(
+        f"{BASE_URL}/paper/{paper_id}/citations",
+        params={"fields": CITATION_FIELDS, "limit": limit},
+    )
+
+    if not data or "data" not in data or not data["data"]:
+        raise SourceUnavailable("Semantic Scholar", f"no citations for '{paper_id}'")
+
+    citations_with_context = []
+    citations_without_context = 0
+
+    for entry in data["data"]:
+        citing = entry.get("citingPaper", {})
+        contexts = entry.get("contexts") or []
+
+        if not contexts:
+            citations_without_context += 1
+            continue
+
+        title = citing.get("title") or "No title"
+        authors = ", ".join(a.get("name", "Unknown") for a in citing.get("authors", []))
+        year = citing.get("year") or "Year unknown"
+        ext_ids = citing.get("externalIds") or {}
+        doi = ext_ids.get("DOI", "Not available")
+        venue = citing.get("venue") or ""
+
+        lines = [f"**{title}**"]
+        lines.append(f"  {authors} ({year}){f' — {venue}' if venue else ''}")
+        lines.append(f"  DOI: {doi}")
+        for ctx in contexts:
+            lines.append(f"  > \"{ctx}\"")
+
+        citations_with_context.append("\n".join(lines))
+
+    if not citations_with_context:
+        raise SourceUnavailable(
+            "Semantic Scholar",
+            f"found {citations_without_context} citing paper(s) but none with context sentences"
+        )
+
+    result_lines = [f"Found {len(citations_with_context)} citing paper(s) with context sentences."]
+    if citations_without_context:
+        result_lines.append(
+            f"({citations_without_context} additional citing paper(s) without context sentences.)"
+        )
+    result_lines.append("")
+    result_lines.append("\n\n".join(citations_with_context))
+    result_lines.append("\n[Source: Semantic Scholar citation contexts]")
+
+    return "\n".join(result_lines)
 
 
 async def search_by_topic(

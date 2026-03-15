@@ -6,8 +6,10 @@ import time
 from pathlib import Path
 
 _TTLS = {
-    "paper_details": 30 * 86400,  # 30 days
-    "bibtex": 90 * 86400,         # 90 days
+    "paper_details": 30 * 86400,      # 30 days
+    "bibtex": 90 * 86400,             # 90 days
+    "unpaywall": 30 * 86400,          # 30 days
+    "citation_context": 7 * 86400,    # 7 days — new citations appear frequently
 }
 
 _DEFAULT_PATH = os.path.expanduser("~/.cache/scholark-1/papers.db")

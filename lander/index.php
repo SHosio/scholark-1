@@ -131,7 +131,7 @@ body::after {
 }
 
 .entity-icon {
-  font-size: clamp(60px, 10vw, 100px);
+  font-size: clamp(120px, 20vw, 200px);
   line-height: 1;
   animation: entity-breathe 4s ease-in-out infinite;
   filter: grayscale(1) brightness(0.8) sepia(1) hue-rotate(70deg) saturate(5);
@@ -459,6 +459,23 @@ body::after {
   opacity: 0.5;
 }
 
+.cta-dismiss {
+  margin-top: 18px;
+}
+
+.cta-dismiss a {
+  font-size: 10px;
+  color: rgba(0, 204, 51, 0.25);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  font-style: italic;
+  transition: color 0.3s ease;
+}
+
+.cta-dismiss a:hover {
+  color: rgba(0, 204, 51, 0.5);
+}
+
 /* Footer */
 .footer {
   text-align: center;
@@ -535,19 +552,23 @@ body::after {
   <div class="capabilities">
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>CLASS</div>
-      <div class="cap-value">Autonomous Research Intelligence // MCP-native agent</div>
+      <div class="cap-value">Agent-native literature intelligence // MCP server // 6 tools // 5 databases</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>MISSION</div>
-      <div class="cap-value">Tap into the world's academic knowledge. Surface context, insights, and wisdom from the literature — on demand.</div>
+      <div class="cap-value">Give your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. No hallucinated references. No copy-pasting from Google Scholar. It just works.</div>
+    </div>
+    <div class="cap-row">
+      <div class="cap-label"><span class="pulse-marker"></span>HOSTS</div>
+      <div class="cap-value">Claude Desktop // Claude Code // Cursor // Windsurf // Any MCP-compatible agent</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>PROTOCOL</div>
-      <div class="cap-value">MCP stdio transport // Spawned by AI agents // No daemon, no overhead</div>
+      <div class="cap-value">MCP stdio transport // Spawned on demand // No daemon, no Docker, no overhead</div>
     </div>
     <div class="cap-row">
-      <div class="cap-label"><span class="pulse-marker"></span>ACCURACY</div>
-      <div class="cap-value">Every result cites its source. Uncertainty is flagged, never hidden. Scholark-1 does not hallucinate — it tells you when it doesn't know.</div>
+      <div class="cap-label"><span class="pulse-marker"></span>TRUST</div>
+      <div class="cap-value">Every result cites its source. 5 databases cross-checked and deduplicated by DOI. Uncertainty flagged, never hidden. Scholark-1 does not hallucinate.</div>
     </div>
   </div>
 
@@ -556,19 +577,27 @@ body::after {
     <div class="tools-header">// ACTIVE TOOLS</div>
     <div class="tool-block">
       <div class="tool-name">search_papers</div>
-      <div class="tool-desc">Multi-source search across Semantic Scholar + Crossref. Combined results with source attribution.</div>
+      <div class="tool-desc">Parallel search across 4 databases. Cross-source deduplication by DOI. Source attribution on every result.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">fetch_paper_details</div>
-      <div class="tool-desc">Deep metadata retrieval with automatic fallback chain. SS first, Crossref for DOIs.</div>
+      <div class="tool-desc">Deep metadata retrieval with 4-source fallback chain. Cached for speed, attributed for trust.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">search_by_topic</div>
-      <div class="tool-desc">Topic search with year range filtering. Falls back gracefully when primary source is empty.</div>
+      <div class="tool-desc">Topic search with year range filtering. Sequential fallback across all sources.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">doi_to_bibtex</div>
       <div class="tool-desc">DOI to BibTeX via content negotiation. Accepts any format — bare, URL, prefixed.</div>
+    </div>
+    <div class="tool-block">
+      <div class="tool-name">find_open_access</div>
+      <div class="tool-desc">Locate open access PDFs via Unpaywall. Returns OA status, PDF links, license, and host type.</div>
+    </div>
+    <div class="tool-block">
+      <div class="tool-name">get_citation_context</div>
+      <div class="tool-desc">See how other papers cite a given paper — the actual sentences. Understand reception, criticism, and influence.</div>
     </div>
   </div>
 
@@ -577,11 +606,11 @@ body::after {
     <div class="tools-header">// DATA SOURCES</div>
     <div class="source-grid">
       <div class="source-tag"><span>SEMANTIC SCHOLAR</span></div>
+      <div class="source-tag"><span>OPENALEX</span></div>
       <div class="source-tag"><span>CROSSREF</span></div>
+      <div class="source-tag"><span>EUROPE PMC</span></div>
+      <div class="source-tag"><span>UNPAYWALL</span></div>
       <div class="source-tag"><span>DOI.ORG</span></div>
-      <div class="source-tag"><span>OPENALEX <sup style="font-size:7px;opacity:0.5">SOON</sup></span></div>
-      <div class="source-tag"><span>UNPAYWALL <sup style="font-size:7px;opacity:0.5">SOON</sup></span></div>
-      <div class="source-tag"><span>CLAUDE API <sup style="font-size:7px;opacity:0.5">SOON</sup></span></div>
     </div>
   </div>
 
@@ -589,10 +618,13 @@ body::after {
   <div class="cta-section">
     <div class="cta-box">
       <div class="cta-text">
-        MCP-native research intelligence. Built for agents and researchers.<br>
-        $5/mo. Unlimited queries. No setup.
+        MCP-native. Plug real academic research into any AI agent.<br>
+        $5/mo // Unlimited queries // Zero hallucinated citations
       </div>
       <a href="#" class="cta-command">initialize scholark-1</a>
+      <div class="cta-dismiss">
+        <a href="https://www.spacejam.com/1996/" target="_blank" rel="noopener">No thanks, I prefer to live in the past</a>
+      </div>
     </div>
   </div>
 
@@ -647,11 +679,14 @@ window.addEventListener('resize', () => {
 
 // Boot sequence
 const bootMessages = [
-  { text: '[INIT] Loading neural pathways...', delay: 300 },
-  { text: '[SYNC] Connecting to Semantic Scholar....... OK', delay: 600, ok: true },
-  { text: '[SYNC] Connecting to Crossref............... OK', delay: 900, ok: true },
-  { text: '[SYNC] DOI resolver online.................. OK', delay: 1200, ok: true },
-  { text: '[BOOT] Scholark-1 initialized. Ready to serve.', delay: 1600, ok: true },
+  { text: '[INIT] Loading research intelligence...', delay: 300 },
+  { text: '[SYNC] Semantic Scholar.................... OK', delay: 500, ok: true },
+  { text: '[SYNC] OpenAlex............................ OK', delay: 700, ok: true },
+  { text: '[SYNC] Crossref............................ OK', delay: 900, ok: true },
+  { text: '[SYNC] Europe PMC.......................... OK', delay: 1100, ok: true },
+  { text: '[SYNC] Unpaywall........................... OK', delay: 1300, ok: true },
+  { text: '[CACHE] SQLite DOI cache online............ OK', delay: 1500, ok: true },
+  { text: '[BOOT] 6 tools active. Scholark-1 ready.', delay: 1800, ok: true },
 ];
 
 const bootContainer = document.getElementById('boot-sequence');
