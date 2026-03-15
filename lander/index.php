@@ -1,3 +1,18 @@
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cta_click') {
+    $db = new SQLite3(__DIR__ . '/analytics.db');
+    $db->exec('CREATE TABLE IF NOT EXISTS clicks (id INTEGER PRIMARY KEY, clicked_at TEXT, ip TEXT, ua TEXT)');
+    $stmt = $db->prepare('INSERT INTO clicks (clicked_at, ip, ua) VALUES (:at, :ip, :ua)');
+    $stmt->bindValue(':at', date('c'));
+    $stmt->bindValue(':ip', $_SERVER['REMOTE_ADDR'] ?? '');
+    $stmt->bindValue(':ua', $_SERVER['HTTP_USER_AGENT'] ?? '');
+    $stmt->execute();
+    $count = $db->querySingle('SELECT COUNT(*) FROM clicks');
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => true, 'total' => $count]);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -476,6 +491,75 @@ body::after {
   color: rgba(0, 204, 51, 0.5);
 }
 
+/* Coming soon modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  border: 1px solid var(--green);
+  padding: 40px 50px;
+  max-width: 480px;
+  text-align: center;
+  position: relative;
+  background: var(--g0);
+  box-shadow: 0 0 40px var(--green-glow), inset 0 0 40px var(--green-faint);
+}
+
+.modal-box::before {
+  content: '[ TRANSMISSION ]';
+  position: absolute;
+  top: -8px;
+  left: 20px;
+  background: var(--g0);
+  padding: 0 10px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--green-dark);
+}
+
+.modal-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 20px;
+  color: var(--green);
+  margin-bottom: 16px;
+  letter-spacing: 0.15em;
+}
+
+.modal-text {
+  font-size: 12px;
+  color: var(--green-dim);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.modal-close {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--green-dark);
+  background: none;
+  border: 1px solid var(--green-dark);
+  padding: 8px 20px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+
 /* Footer */
 .footer {
   text-align: center;
@@ -621,7 +705,7 @@ body::after {
         MCP-native. Plug real academic research into any AI agent.<br>
         $5/mo // Unlimited queries // Zero hallucinated citations
       </div>
-      <a href="#" class="cta-command">initialize scholark-1</a>
+      <a href="#" class="cta-command" id="cta-btn" onclick="ctaClick(event)">initialize scholark-1</a>
       <div class="cta-dismiss">
         <a href="https://www.spacejam.com/1996/" target="_blank" rel="noopener">No thanks, I prefer to live in the past</a>
       </div>
@@ -636,7 +720,39 @@ body::after {
 
 </div>
 
+<!-- Coming Soon Modal -->
+<div class="modal-overlay" id="coming-soon-modal">
+  <div class="modal-box">
+    <div class="modal-title">STANDBY</div>
+    <div class="modal-text">
+      Scholark-1 is warming up its engines.<br>
+      Deployment sequence initiating soon.<br><br>
+      Your interest has been logged.
+    </div>
+    <button class="modal-close" onclick="closeModal()">ACKNOWLEDGED</button>
+  </div>
+</div>
+
 <script>
+// CTA click handler
+function ctaClick(e) {
+  e.preventDefault();
+  fetch(window.location.href, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'action=cta_click'
+  }).catch(() => {});
+  document.getElementById('coming-soon-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('coming-soon-modal').classList.remove('active');
+}
+
+document.getElementById('coming-soon-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
 // Matrix rain
 const canvas = document.getElementById('matrix-rain');
 const ctx = canvas.getContext('2d');
