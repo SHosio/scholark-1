@@ -9,3 +9,4 @@ dist/
 analytics.db
 .DS_Store
 .claude/
+docs/superpowers/
