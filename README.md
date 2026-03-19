@@ -21,7 +21,7 @@ Your AI assistant is brilliant at reasoning, but it can't search academic databa
 ## Quick Start
 
 ```bash
-git clone https://github.com/user/scholark-1.git
+git clone https://github.com/SHosio/scholark-1.git
 cd scholark-1
 uv sync
 uv run python server.py

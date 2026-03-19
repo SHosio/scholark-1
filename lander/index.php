@@ -679,7 +679,7 @@ body::after {
     <div class="tools-header">// 3-STEP SETUP</div>
     <div class="setup-code">
       <span class="comment"># 1. Clone and install</span><br>
-      <span class="command">git clone https://github.com/user/scholark-1.git && cd scholark-1 && uv sync</span><br><br>
+      <span class="command">git clone https://github.com/SHosio/scholark-1.git && cd scholark-1 && uv sync</span><br><br>
       <span class="comment"># 2. Register in Claude Code (or any MCP client)</span><br>
       <span class="command">claude mcp add scholark-1 -- uv run --project /path/to/scholark-1 python server.py</span><br><br>
       <span class="comment"># 3. Ask your AI to search for papers. That's it.</span><br>
@@ -694,7 +694,7 @@ body::after {
         Free and open source. MIT licensed.<br>
         Give your AI agent the academic literature it's been missing.
       </div>
-      <a href="https://github.com/user/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">git clone scholark-1</a>
+      <a href="https://github.com/SHosio/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">git clone scholark-1</a>
       <div class="cta-secondary">
         No API keys required to start. All 5 core tools work immediately.
       </div>
@@ -718,7 +718,7 @@ function ctaClick(e) {
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: 'action=cta_click'
   }).catch(() => {});
-  window.open('https://github.com/user/scholark-1', '_blank');
+  window.open('https://github.com/SHosio/scholark-1', '_blank');
 }
 
 // Matrix rain
