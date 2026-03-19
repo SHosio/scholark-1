@@ -1,10 +1,12 @@
 # Scholark-1
 
-Your autonomous research intelligence. An MCP server for deep academic literature work.
+Your autonomous research intelligence. Claude Code native. .tex native. Nothing else.
+
+An MCP server for deep academic literature work — built for researchers who live in Claude Code and write in LaTeX/BibTeX.
 
 ## What it does
 
-Scholark-1 searches **4 academic databases** in parallel, deduplicates results by DOI, and returns human-readable paper metadata with source attribution. It also finds open access PDFs via Unpaywall. Built for use with Claude Code and other MCP-compatible AI assistants.
+Scholark-1 searches **4 academic databases** in parallel, deduplicates results by DOI, and returns human-readable paper metadata with source attribution. It finds open access PDFs via Unpaywall and generates BibTeX entries from any DOI.
 
 ### Sources
 
@@ -70,7 +72,7 @@ cp .env.example .env
 | `OPENALEX_EMAIL` | No (gets polite pool) | Just your email address, no signup |
 | `UNPAYWALL_EMAIL` | Yes, for `find_open_access` | Just your email address, no signup |
 
-Without `SEMANTIC_SCHOLAR_API_KEY`, Semantic Scholar works but with stricter rate limits (100 req/5min).
+Without `SEMANTIC_SCHOLAR_API_KEY`, Semantic Scholar works but shares a rate limit pool with all unauthenticated users. With a key, you get a dedicated 1 request/second limit.
 Without `OPENALEX_EMAIL`, OpenAlex works but at lower priority in their request queue.
 Without `UNPAYWALL_EMAIL`, the `find_open_access` tool will return an error. All other tools work fine.
 
@@ -91,7 +93,20 @@ Without `UNPAYWALL_EMAIL`, the `find_open_access` tool will return an error. All
 - **Cross-source deduplication** — `search_papers` removes duplicate DOIs across all 4 search sources
 - **Search is parallel** (`asyncio.gather`), **details/topic are sequential fallback**
 - **DOI cache** — paper details and BibTeX cached in SQLite with TTL
-- **All APIs are free** for research and non-commercial use
+
+## Credits & Data Sources
+
+Scholark-1 queries the following services. All data is retrieved in real-time from these APIs — Scholark does not redistribute or repackage any data.
+
+- **[Semantic Scholar](https://www.semanticscholar.org/)** by the Allen Institute for AI — paper metadata, abstracts, TL;DRs, citation counts, and citation contexts. Used under the [Semantic Scholar API License Agreement](https://www.semanticscholar.org/product/api/license).
+- **[OpenAlex](https://openalex.org/)** — open scholarly metadata. Data licensed under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **[Crossref](https://www.crossref.org/)** — DOI metadata and BibTeX via content negotiation.
+- **[Europe PMC](https://europepmc.org/)** — PubMed, PMC, and preprint metadata.
+- **[Unpaywall](https://unpaywall.org/)** — open access PDF locations and OA status.
+
+## License
+
+MIT
 
 ## Development
 
