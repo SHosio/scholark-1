@@ -544,6 +544,30 @@ body::after {
   margin-bottom: 8px;
 }
 
+.footer a {
+  color: var(--green-dark);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: var(--green-dim);
+}
+
+.footer .author {
+  color: var(--green-dark);
+  margin-bottom: 12px;
+  font-size: 10px;
+}
+
+.footer .promo {
+  color: rgba(0, 204, 51, 0.25);
+  margin-top: 12px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-style: italic;
+}
+
 /* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -703,8 +727,10 @@ body::after {
 
   <!-- Footer -->
   <div class="footer">
+    <div class="author">Built by <a href="https://simohosio.com" target="_blank" rel="noopener">Professor Simo Hosio</a></div>
     <div class="version">MIT LICENSE // STDIO TRANSPORT // OPEN SOURCE</div>
     <div>SCHOLARK-1 IS WATCHING THE LITERATURE SO YOU DON'T HAVE TO</div>
+    <div class="promo">Too busy to learn tools like this? You might be doing your PhD wrong.<br><a href="https://edgeacademia.com/powertrio" target="_blank" rel="noopener">PhD Power Trio Framework</a> — a better way to PhD.</div>
   </div>
 
 </div>

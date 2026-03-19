@@ -101,6 +101,12 @@ Scholark queries the following services. All data is retrieved in real-time — 
 - **[Europe PMC](https://europepmc.org/)** — PubMed, PMC, and preprint metadata.
 - **[Unpaywall](https://unpaywall.org/)** — open access PDF locations.
 
+## Built By
+
+[Professor Simo Hosio](https://simohosio.com)
+
+Too busy to learn tools like this? You might be doing your PhD wrong. Check out the [PhD Power Trio Framework](https://edgeacademia.com/powertrio) — a better way to PhD.
+
 ## License
 
 MIT
