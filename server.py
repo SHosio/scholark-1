@@ -299,8 +299,10 @@ async def find_open_access(doi: str) -> str:
     """Find open access versions of a paper by DOI via Unpaywall.
 
     Returns OA status, PDF links, host type (repository/publisher), version
-    (published/accepted/submitted), and license info. Requires UNPAYWALL_EMAIL
-    to be set in .env.
+    (published/accepted/submitted), and license info.
+
+    Needs UNPAYWALL_EMAIL in your .env — just your email address, no signup.
+    All other tools work without it.
 
     Args:
         doi: The DOI to look up (e.g. '10.1234/test')
@@ -319,6 +321,13 @@ async def find_open_access(doi: str) -> str:
         cache.put(f"unpaywall:{normalized}", result, "Unpaywall")
         return result
     except SourceUnavailable as e:
+        if "no email configured" in e.reason:
+            return (
+                "To find open access PDFs, add your email to .env:\n\n"
+                "  UNPAYWALL_EMAIL=you@example.com\n\n"
+                "That's it — no signup, no API key. Unpaywall just needs an email "
+                "for contact purposes. All other Scholark tools work without this."
+            )
         return f"Could not check open access for DOI '{normalized}'. {e.reason}"
 
 

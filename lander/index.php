@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SCHOLARK-1 // Autonomous Research Intelligence</title>
+<meta name="description" content="Free, open-source MCP server that gives your AI agent access to real academic papers, real citations, and real BibTeX. No hallucinated references.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Share+Tech+Mono&display=swap');
 
@@ -250,6 +251,26 @@ body::after {
 .divider span::before { right: 100%; }
 .divider span::after { left: 100%; }
 
+/* Problem section */
+.problem-section {
+  text-align: center;
+  margin: 0 0 50px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 1.7s;
+}
+
+.problem-text {
+  font-size: 14px;
+  color: var(--green-dim);
+  line-height: 1.8;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.problem-text .highlight {
+  color: var(--green);
+}
+
 /* Capability cards */
 .capabilities {
   display: grid;
@@ -409,6 +430,32 @@ body::after {
 
 .source-tag span { position: relative; }
 
+/* Setup section */
+.setup-section {
+  margin: 50px 0;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 2.6s;
+}
+
+.setup-code {
+  background: rgba(0, 255, 65, 0.03);
+  border: 1px solid var(--green-dark);
+  padding: 20px 24px;
+  font-size: 12px;
+  color: var(--green-dim);
+  line-height: 1.8;
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.setup-code .comment {
+  color: var(--green-dark);
+}
+
+.setup-code .command {
+  color: var(--green);
+}
+
 /* CTA section */
 .cta-section {
   text-align: center;
@@ -431,7 +478,7 @@ body::after {
 }
 
 .cta-box::before {
-  content: '[ INTERFACE ]';
+  content: '[ OPEN SOURCE ]';
   position: absolute;
   top: -8px;
   left: 20px;
@@ -474,90 +521,11 @@ body::after {
   opacity: 0.5;
 }
 
-.cta-dismiss {
+.cta-secondary {
   margin-top: 18px;
-}
-
-.cta-dismiss a {
   font-size: 10px;
-  color: rgba(0, 204, 51, 0.25);
-  text-decoration: none;
+  color: var(--green-dark);
   letter-spacing: 0.05em;
-  font-style: italic;
-  transition: color 0.3s ease;
-}
-
-.cta-dismiss a:hover {
-  color: rgba(0, 204, 51, 0.5);
-}
-
-/* Coming soon modal */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 2000;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-overlay.active {
-  display: flex;
-}
-
-.modal-box {
-  border: 1px solid var(--green);
-  padding: 40px 50px;
-  max-width: 480px;
-  text-align: center;
-  position: relative;
-  background: var(--g0);
-  box-shadow: 0 0 40px var(--green-glow), inset 0 0 40px var(--green-faint);
-}
-
-.modal-box::before {
-  content: '[ TRANSMISSION ]';
-  position: absolute;
-  top: -8px;
-  left: 20px;
-  background: var(--g0);
-  padding: 0 10px;
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: var(--green-dark);
-}
-
-.modal-title {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 20px;
-  color: var(--green);
-  margin-bottom: 16px;
-  letter-spacing: 0.15em;
-}
-
-.modal-text {
-  font-size: 12px;
-  color: var(--green-dim);
-  line-height: 1.7;
-  margin-bottom: 24px;
-}
-
-.modal-close {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  color: var(--green-dark);
-  background: none;
-  border: 1px solid var(--green-dark);
-  padding: 8px 20px;
-  cursor: pointer;
-  letter-spacing: 0.1em;
-  transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-  color: var(--green);
-  border-color: var(--green);
 }
 
 /* Footer */
@@ -612,8 +580,8 @@ body::after {
   <!-- Status Bar -->
   <div class="status-bar">
     <div><span class="status-dot"></span>SYSTEM ONLINE</div>
-    <div><?= strtoupper(date('Y.m.d')) ?> // <?= date('H:i') ?> UTC</div>
-    <div>BUILD 1.0.0</div>
+    <div>FREE & OPEN SOURCE</div>
+    <div>MIT LICENSE</div>
   </div>
 
   <!-- Entity -->
@@ -630,29 +598,38 @@ body::after {
     </div>
   </div>
 
+  <!-- Problem -->
+  <div class="problem-section">
+    <p class="problem-text">
+      Your AI assistant is brilliant at reasoning. But it <span class="highlight">invents paper titles</span>,
+      <span class="highlight">fabricates DOIs</span>, and <span class="highlight">hallucinates citation counts</span>.
+      Scholark-1 connects it to real academic databases so every reference it gives you actually exists.
+    </p>
+  </div>
+
   <div class="divider"><span>SYSTEM MANIFEST</span></div>
 
   <!-- Capabilities -->
   <div class="capabilities">
     <div class="cap-row">
-      <div class="cap-label"><span class="pulse-marker"></span>CLASS</div>
-      <div class="cap-value">Agent-native literature intelligence // MCP server // 6 tools // 5 databases</div>
+      <div class="cap-label"><span class="pulse-marker"></span>WHAT</div>
+      <div class="cap-value">An MCP server that gives your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. 6 tools, 5 databases, zero hallucinated references.</div>
     </div>
     <div class="cap-row">
-      <div class="cap-label"><span class="pulse-marker"></span>MISSION</div>
-      <div class="cap-value">Give your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. No hallucinated references. No copy-pasting from Google Scholar. It just works.</div>
+      <div class="cap-label"><span class="pulse-marker"></span>HOW</div>
+      <div class="cap-value">Searches 4 databases in parallel. Deduplicates results by DOI. Falls back automatically when a source is down. Caches lookups in SQLite. Every result cites its source.</div>
     </div>
     <div class="cap-row">
-      <div class="cap-label"><span class="pulse-marker"></span>HOSTS</div>
-      <div class="cap-value">Claude Desktop // Claude Code // Cursor // Windsurf // Any MCP-compatible agent</div>
+      <div class="cap-label"><span class="pulse-marker"></span>SETUP</div>
+      <div class="cap-value">Clone. Install. Go. Zero API keys required. Works with Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP-compatible client.</div>
     </div>
     <div class="cap-row">
-      <div class="cap-label"><span class="pulse-marker"></span>PROTOCOL</div>
-      <div class="cap-value">MCP stdio transport // Spawned on demand // No daemon, no Docker, no overhead</div>
+      <div class="cap-label"><span class="pulse-marker"></span>COST</div>
+      <div class="cap-value">Free. Forever. MIT licensed. All underlying APIs are free for research use. No paid tier, no usage limits, no tracking.</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>TRUST</div>
-      <div class="cap-value">Every result cites its source. 5 databases cross-checked and deduplicated by DOI. Uncertainty flagged, never hidden. Scholark-1 does not hallucinate.</div>
+      <div class="cap-value">Every result states its source. 4 databases cross-checked and deduplicated by DOI. Uncertainty flagged, never hidden. Your AI stops making things up.</div>
     </div>
   </div>
 
@@ -661,27 +638,27 @@ body::after {
     <div class="tools-header">// ACTIVE TOOLS</div>
     <div class="tool-block">
       <div class="tool-name">search_papers</div>
-      <div class="tool-desc">Parallel search across 4 databases. Cross-source deduplication by DOI. Source attribution on every result.</div>
+      <div class="tool-desc">Search 4 databases in parallel. Results deduplicated by DOI. Source attribution on every paper.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">fetch_paper_details</div>
-      <div class="tool-desc">Deep metadata retrieval with 4-source fallback chain. Cached for speed, attributed for trust.</div>
+      <div class="tool-desc">Deep metadata with automatic fallback across 4 sources. Cached for speed.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">search_by_topic</div>
-      <div class="tool-desc">Topic search with year range filtering. Sequential fallback across all sources.</div>
+      <div class="tool-desc">Topic search with year range filtering. Find what was published on X between 2020 and 2025.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">doi_to_bibtex</div>
-      <div class="tool-desc">DOI to BibTeX via content negotiation. Accepts any format — bare, URL, prefixed.</div>
+      <div class="tool-desc">Any DOI to a BibTeX entry. Paste a DOI, get a .bib-ready citation. Cached for 90 days.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">find_open_access</div>
-      <div class="tool-desc">Locate open access PDFs via Unpaywall. Returns OA status, PDF links, license, and host type.</div>
+      <div class="tool-desc">Find free, legal PDFs via Unpaywall. See OA status, version, license, and download links.</div>
     </div>
     <div class="tool-block">
       <div class="tool-name">get_citation_context</div>
-      <div class="tool-desc">See how other papers cite a given paper — the actual sentences. Understand reception, criticism, and influence.</div>
+      <div class="tool-desc">The actual sentences where other papers cite a work. See how a finding was received, criticized, or extended.</div>
     </div>
   </div>
 
@@ -694,7 +671,19 @@ body::after {
       <div class="source-tag"><span>CROSSREF</span></div>
       <div class="source-tag"><span>EUROPE PMC</span></div>
       <div class="source-tag"><span>UNPAYWALL</span></div>
-      <div class="source-tag"><span>DOI.ORG</span></div>
+    </div>
+  </div>
+
+  <!-- Setup -->
+  <div class="setup-section">
+    <div class="tools-header">// 3-STEP SETUP</div>
+    <div class="setup-code">
+      <span class="comment"># 1. Clone and install</span><br>
+      <span class="command">git clone https://github.com/user/scholark-1.git && cd scholark-1 && uv sync</span><br><br>
+      <span class="comment"># 2. Register in Claude Code (or any MCP client)</span><br>
+      <span class="command">claude mcp add scholark-1 -- uv run --project /path/to/scholark-1 python server.py</span><br><br>
+      <span class="comment"># 3. Ask your AI to search for papers. That's it.</span><br>
+      <span class="command">"Find recent papers on retrieval-augmented generation for scientific literature"</span>
     </div>
   </div>
 
@@ -702,39 +691,26 @@ body::after {
   <div class="cta-section">
     <div class="cta-box">
       <div class="cta-text">
-        MCP-native. Plug real academic research into any AI agent.<br>
-        $5/mo // Unlimited queries // Zero hallucinated citations
+        Free and open source. MIT licensed.<br>
+        Give your AI agent the academic literature it's been missing.
       </div>
-      <a href="#" class="cta-command" id="cta-btn" onclick="ctaClick(event)">initialize scholark-1</a>
-      <div class="cta-dismiss">
-        <a href="https://www.spacejam.com/1996/" target="_blank" rel="noopener">No thanks, I prefer to live in the past</a>
+      <a href="https://github.com/user/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">git clone scholark-1</a>
+      <div class="cta-secondary">
+        No API keys required to start. All 5 core tools work immediately.
       </div>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <div class="version">v1.0.0 // BUILD <?= date('Ymd') ?> // STDIO TRANSPORT</div>
-    <div>SCHOLARK-1 IS WATCHING THE LITERATURE</div>
+    <div class="version">MIT LICENSE // STDIO TRANSPORT // OPEN SOURCE</div>
+    <div>SCHOLARK-1 IS WATCHING THE LITERATURE SO YOU DON'T HAVE TO</div>
   </div>
 
-</div>
-
-<!-- Coming Soon Modal -->
-<div class="modal-overlay" id="coming-soon-modal">
-  <div class="modal-box">
-    <div class="modal-title">STANDBY</div>
-    <div class="modal-text">
-      Scholark-1 is warming up its engines.<br>
-      Deployment sequence initiating soon.<br><br>
-      Your interest has been logged.
-    </div>
-    <button class="modal-close" onclick="closeModal()">ACKNOWLEDGED</button>
-  </div>
 </div>
 
 <script>
-// CTA click handler
+// CTA click handler — tracks interest, then redirects to GitHub
 function ctaClick(e) {
   e.preventDefault();
   fetch(window.location.href, {
@@ -742,16 +718,8 @@ function ctaClick(e) {
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: 'action=cta_click'
   }).catch(() => {});
-  document.getElementById('coming-soon-modal').classList.add('active');
+  window.open('https://github.com/user/scholark-1', '_blank');
 }
-
-function closeModal() {
-  document.getElementById('coming-soon-modal').classList.remove('active');
-}
-
-document.getElementById('coming-soon-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
 
 // Matrix rain
 const canvas = document.getElementById('matrix-rain');
@@ -802,7 +770,7 @@ const bootMessages = [
   { text: '[SYNC] Europe PMC.......................... OK', delay: 1100, ok: true },
   { text: '[SYNC] Unpaywall........................... OK', delay: 1300, ok: true },
   { text: '[CACHE] SQLite DOI cache online............ OK', delay: 1500, ok: true },
-  { text: '[BOOT] 6 tools active. Scholark-1 ready.', delay: 1800, ok: true },
+  { text: '[BOOT] 6 tools active. 0 API keys required.', delay: 1800, ok: true },
 ];
 
 const bootContainer = document.getElementById('boot-sequence');
