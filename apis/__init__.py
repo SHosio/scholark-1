@@ -11,11 +11,9 @@ async def make_request(
     headers: dict | None = None,
     params: dict | None = None,
     accept: str = "application/json",
-    json: dict | None = None,
 ) -> dict[str, Any] | None:
-    """Make an HTTP GET or POST request with error handling.
+    """Make an HTTP GET request with error handling.
 
-    Sends POST when json is provided, GET otherwise.
     Returns parsed JSON on success, None on connection/timeout failures.
     Raises httpx.HTTPStatusError on HTTP error responses (4xx, 5xx)
     so callers can inspect status codes.
@@ -26,14 +24,9 @@ async def make_request(
 
     async with httpx.AsyncClient() as client:
         try:
-            if json is not None:
-                response = await client.post(
-                    url, headers=default_headers, params=params, json=json, timeout=30.0
-                )
-            else:
-                response = await client.get(
-                    url, headers=default_headers, params=params, timeout=30.0
-                )
+            response = await client.get(
+                url, headers=default_headers, params=params, timeout=30.0
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError:

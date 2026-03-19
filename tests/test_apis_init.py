@@ -1,6 +1,6 @@
 import pytest
 import httpx
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from apis import make_request, make_request_text
 
 
@@ -104,21 +104,3 @@ async def test_make_request_text_http_error_raises():
 
         with pytest.raises(httpx.HTTPStatusError):
             await make_request_text("https://doi.org/10.1234/test")
-
-
-@pytest.mark.asyncio
-async def test_make_request_post_with_json():
-    """make_request sends POST when json parameter is provided."""
-    with patch("httpx.AsyncClient") as mock_client_class:
-        mock_client = AsyncMock()
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"result": "ok"}
-        mock_response.raise_for_status = MagicMock()
-        mock_client.post.return_value = mock_response
-        mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client_class.return_value.__aexit__ = AsyncMock(return_value=False)
-
-        from apis import make_request
-        result = await make_request("http://test", json={"key": "value"})
-        mock_client.post.assert_called_once()
-        assert result == {"result": "ok"}
