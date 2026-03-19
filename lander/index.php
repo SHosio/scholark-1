@@ -166,7 +166,7 @@ body::after {
   line-height: 1;
   animation: entity-breathe 4s ease-in-out infinite;
   filter: grayscale(1) brightness(0.8) sepia(1) hue-rotate(70deg) saturate(5);
-  cursor: pointer;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size:28px'><text y='28'>👆</text></svg>") 16 0, pointer;
   user-select: none;
   transition: transform 0.1s ease;
 }
@@ -193,6 +193,17 @@ body::after {
   letter-spacing: 0.1em;
   margin-top: 8px;
   transition: color 0.3s ease;
+}
+
+.robot-counter .poke-count {
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 500;
+  text-shadow: 0 0 8px var(--green-glow);
+}
+
+.robot-counter.flash .poke-count {
+  text-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
 }
 
 .robot-counter.flash {
@@ -740,7 +751,7 @@ body::after {
   <!-- Entity -->
   <div class="ascii-entity">
     <div class="entity-icon" id="robot-btn" title="Click me.">&#x1F916;</div>
-    <div class="robot-counter" id="robot-counter">researchers have poked Scholark-1 <?= number_format($robotClicks) ?> times</div>
+    <div class="robot-counter" id="robot-counter">researchers have poked Scholark-1 <span class="poke-count"><?= number_format($robotClicks) ?></span> times</div>
     <div id="boot-sequence" style="margin-top: 16px;"></div>
   </div>
 
@@ -900,7 +911,7 @@ function rollDrop() {
 }
 
 function updateCounter(total) {
-  robotCounter.textContent = 'researchers have poked Scholark-1 ' + Number(total).toLocaleString() + ' times';
+  robotCounter.innerHTML = 'researchers have poked Scholark-1 <span class="poke-count">' + Number(total).toLocaleString() + '</span> times';
 }
 
 robotBtn.addEventListener('click', function(e) {
