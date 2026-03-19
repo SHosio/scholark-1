@@ -56,18 +56,20 @@ _UPGRADE_MSG = (
 )
 
 
-def _read_file(file_path: str) -> str | None:
-    """Read a text file, return contents or None on error."""
+def _read_file(file_path: str) -> tuple[str | None, str | None]:
+    """Read a text file. Returns (content, None) on success or (None, error_message) on failure."""
     if not os.path.isfile(file_path):
-        return None
+        return None, f"File not found: '{file_path}'"
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         if len(content) > 100_000:  # ~25k words
-            return None
-        return content
-    except (OSError, UnicodeDecodeError):
-        return None
+            return None, f"File '{file_path}' is too large (max 100KB)."
+        return content, None
+    except UnicodeDecodeError:
+        return None, f"File '{file_path}' is not a text file."
+    except OSError as e:
+        return None, f"Could not read file '{file_path}': {e}"
 
 
 def _deduplicate_results(sections: list[str]) -> tuple[list[str], int]:
@@ -370,9 +372,9 @@ async def analyze_document(
         return _UPGRADE_MSG
 
     if file_path:
-        content = _read_file(file_path)
-        if content is None:
-            return f"Could not read file '{file_path}'. Check the path exists and is a text file under 100KB."
+        content, error = _read_file(file_path)
+        if error:
+            return error
         source = "file"
     elif text:
         content = text
@@ -411,9 +413,9 @@ async def find_missing_literature(
         return _UPGRADE_MSG
 
     if file_path:
-        content = _read_file(file_path)
-        if content is None:
-            return f"Could not read file '{file_path}'. Check the path exists and is a text file under 100KB."
+        content, error = _read_file(file_path)
+        if error:
+            return error
         source = "file"
     elif text:
         content = text
@@ -457,9 +459,9 @@ async def discover_adjacent(
     content = None
     source = None
     if file_path:
-        content = _read_file(file_path)
-        if content is None:
-            return f"Could not read file '{file_path}'. Check the path exists and is a text file under 100KB."
+        content, error = _read_file(file_path)
+        if error:
+            return error
         source = "file"
     elif topic:
         source = "topic"
