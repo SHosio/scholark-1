@@ -105,7 +105,7 @@ Scholark queries the following services. All data is retrieved in real-time — 
 
 [Professor Simo Hosio](https://simohosio.com)
 
-Too busy to learn tools like this? You might be doing your PhD wrong. Check out the [PhD Power Trio Framework](https://edgeacademia.com/powertrio) — a better way to PhD.
+Too busy to learn tools like this? You might be doing academia wrong. Check out the [PhD Power Trio Framework](https://edgeacademia.com/powertrio) — a better way to PhD.
 
 ## License
 

@@ -730,7 +730,7 @@ body::after {
     <div class="author">Built by <a href="https://simohosio.com" target="_blank" rel="noopener">Professor Simo Hosio</a></div>
     <div class="version">MIT LICENSE // STDIO TRANSPORT // OPEN SOURCE</div>
     <div>SCHOLARK-1 IS WATCHING THE LITERATURE SO YOU DON'T HAVE TO</div>
-    <div class="promo">Too busy to learn tools like this? You might be doing your PhD wrong.<br><a href="https://edgeacademia.com/powertrio" target="_blank" rel="noopener">PhD Power Trio Framework</a> — a better way to PhD.</div>
+    <div class="promo">Too busy to learn tools like this? You might be doing academia wrong.<br><a href="https://edgeacademia.com/powertrio" target="_blank" rel="noopener">PhD Power Trio Framework</a> — a better way to PhD.</div>
   </div>
 
 </div>
