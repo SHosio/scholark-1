@@ -200,15 +200,16 @@ body::after {
 
 .click-particle {
   position: absolute;
-  font-size: 14px;
+  font-size: 36px;
   pointer-events: none;
-  animation: particle-fly 0.8s ease-out forwards;
+  animation: particle-fly 2s ease-out forwards;
   z-index: 100;
 }
 
 @keyframes particle-fly {
   0% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-60px) scale(0.5); }
+  70% { opacity: 0.8; transform: translateY(-120px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-180px) scale(0.8); }
 }
 
 @keyframes entity-breathe {
@@ -829,7 +830,7 @@ robotBtn.addEventListener('click', function(e) {
   particle.style.top = (e.clientY - 10) + 'px';
   particle.style.position = 'fixed';
   document.body.appendChild(particle);
-  setTimeout(() => particle.remove(), 800);
+  setTimeout(() => particle.remove(), 2000);
 
   // Send to server
   fetch(window.location.href, {
