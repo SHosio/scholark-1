@@ -17,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
     if ($_POST['action'] === 'robot_click') {
-        $db->exec('UPDATE robot_clicks SET total = total + 1 WHERE id = 1');
+        $value = max(1, min(100, intval($_POST['value'] ?? 1)));
+        $db->exec('UPDATE robot_clicks SET total = total + ' . $value . ' WHERE id = 1');
         $total = $db->querySingle('SELECT total FROM robot_clicks WHERE id = 1');
         header('Content-Type: application/json');
         echo json_encode(['total' => $total]);
@@ -206,10 +207,79 @@ body::after {
   z-index: 100;
 }
 
+.click-particle.rare {
+  font-size: 54px;
+  animation: particle-fly-rare 2.5s ease-out forwards;
+}
+
+.click-particle.legendary {
+  font-size: 80px;
+  animation: particle-fly-legendary 3.5s ease-out forwards;
+}
+
+.click-particle .point-label {
+  position: absolute;
+  font-size: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--green);
+  white-space: nowrap;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 4px;
+}
+
+.click-particle.rare .point-label {
+  font-size: 22px;
+  color: var(--amber);
+  text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
+}
+
+.click-particle.legendary .point-label {
+  font-size: 32px;
+  color: #ff3333;
+  text-shadow: 0 0 20px rgba(255, 51, 51, 0.6);
+}
+
 @keyframes particle-fly {
   0% { opacity: 1; transform: translateY(0) scale(1); }
   70% { opacity: 0.8; transform: translateY(-120px) scale(1.2); }
   100% { opacity: 0; transform: translateY(-180px) scale(0.8); }
+}
+
+@keyframes particle-fly-rare {
+  0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  50% { opacity: 1; transform: translateY(-100px) scale(1.4) rotate(10deg); }
+  100% { opacity: 0; transform: translateY(-220px) scale(0.6) rotate(-5deg); }
+}
+
+@keyframes particle-fly-legendary {
+  0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  30% { opacity: 1; transform: translateY(-60px) scale(1.8) rotate(-15deg); }
+  60% { opacity: 1; transform: translateY(-150px) scale(1.5) rotate(10deg); }
+  100% { opacity: 0; transform: translateY(-300px) scale(0.5) rotate(0deg); }
+}
+
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+  animation: flash-bang 0.4s ease-out forwards;
+}
+
+.screen-flash.rare {
+  background: rgba(255, 176, 0, 0.15);
+}
+
+.screen-flash.legendary {
+  background: rgba(255, 51, 51, 0.2);
+  animation: flash-bang 0.8s ease-out forwards;
+}
+
+@keyframes flash-bang {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @keyframes entity-breathe {
@@ -670,7 +740,7 @@ body::after {
   <!-- Entity -->
   <div class="ascii-entity">
     <div class="entity-icon" id="robot-btn" title="Click me.">&#x1F916;</div>
-    <div class="robot-counter" id="robot-counter"><?= number_format($robotClicks) ?> researchers have poked the robot</div>
+    <div class="robot-counter" id="robot-counter">researchers have poked Scholark-1 <?= number_format($robotClicks) ?> times</div>
     <div id="boot-sequence" style="margin-top: 16px;"></div>
   </div>
 
@@ -807,41 +877,71 @@ function ctaClick(e) {
   window.open('https://github.com/SHosio/scholark-1', '_blank');
 }
 
-// Robot cookie clicker
+// Robot cookie clicker with rarity tiers
 const robotBtn = document.getElementById('robot-btn');
 const robotCounter = document.getElementById('robot-counter');
-const particles = ['+1', '📄', '📚', '🔬', '🧪', '📖', '🎓', '⚡'];
+
+// Common: +1 (85% chance) — science-adjacent
+const common = ['📄', '📚', '🔬', '🧪', '📖', '🎓', '⚡', '🧠', '💡'];
+// Rare: +10 (12% chance) — absurd and unrelated
+const rare = ['🐸', '🦆', '🌮', '🍕', '🛸', '🦑', '🎺', '🗿', '🧲', '🫏', '🦩', '🥒'];
+// Legendary: +100 (3% chance) — absolutely unhinged
+const legendary = ['🏆', '💎', '🌋', '🦖', '👑', '🍆', '🐉'];
+
+function rollDrop() {
+  const roll = Math.random();
+  if (roll < 0.03) {
+    return { emoji: legendary[Math.floor(Math.random() * legendary.length)], value: 100, tier: 'legendary' };
+  } else if (roll < 0.15) {
+    return { emoji: rare[Math.floor(Math.random() * rare.length)], value: 10, tier: 'rare' };
+  } else {
+    return { emoji: common[Math.floor(Math.random() * common.length)], value: 1, tier: 'common' };
+  }
+}
+
+function updateCounter(total) {
+  robotCounter.textContent = 'researchers have poked Scholark-1 ' + Number(total).toLocaleString() + ' times';
+}
 
 robotBtn.addEventListener('click', function(e) {
+  const drop = rollDrop();
+
   // Bonk animation
   this.classList.remove('clicked');
-  void this.offsetWidth; // force reflow
+  void this.offsetWidth;
   this.classList.add('clicked');
 
   // Flash counter
   robotCounter.classList.add('flash');
   setTimeout(() => robotCounter.classList.remove('flash'), 300);
 
-  // Floating particle
+  // Screen flash for rare/legendary
+  if (drop.tier !== 'common') {
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash ' + drop.tier;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), drop.tier === 'legendary' ? 800 : 400);
+  }
+
+  // Floating particle with point label
   const particle = document.createElement('span');
-  particle.className = 'click-particle';
-  particle.textContent = particles[Math.floor(Math.random() * particles.length)];
-  particle.style.left = (e.clientX - 10) + 'px';
-  particle.style.top = (e.clientY - 10) + 'px';
+  particle.className = 'click-particle ' + drop.tier;
+  particle.innerHTML = drop.emoji + '<span class="point-label">+' + drop.value + '</span>';
+  particle.style.left = (e.clientX - 20) + 'px';
+  particle.style.top = (e.clientY - 20) + 'px';
   particle.style.position = 'fixed';
   document.body.appendChild(particle);
-  setTimeout(() => particle.remove(), 2000);
+  const removeDelay = drop.tier === 'legendary' ? 3500 : drop.tier === 'rare' ? 2500 : 2000;
+  setTimeout(() => particle.remove(), removeDelay);
 
-  // Send to server
+  // Send to server with value
   fetch(window.location.href, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: 'action=robot_click'
+    body: 'action=robot_click&value=' + drop.value
   })
   .then(r => r.json())
-  .then(data => {
-    robotCounter.textContent = Number(data.total).toLocaleString() + ' researchers have poked the robot';
-  })
+  .then(data => updateCounter(data.total))
   .catch(() => {});
 });
 
