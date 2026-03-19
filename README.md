@@ -1,5 +1,7 @@
 # Scholark-1
 
+**[simohosio.com/scholark-1](https://simohosio.com/scholark-1/)**
+
 Your autonomous research intelligence. Free and open source.
 
 An MCP server that gives your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. No hallucinated references. No copy-pasting from Google Scholar. It just works.
