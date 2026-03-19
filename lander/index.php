@@ -46,7 +46,7 @@ $robotClicks = $db->querySingle('SELECT total FROM robot_clicks WHERE id = 1') ?
   --g2: #0d1a0d;
   --green: #00ff41;
   --green-dim: #00cc33;
-  --green-dark: #004d14;
+  --green-dark: #00802b;
   --green-glow: rgba(0, 255, 65, 0.15);
   --green-faint: rgba(0, 255, 65, 0.04);
   --amber: #ffb000;
@@ -512,7 +512,7 @@ body::after {
 
 .tool-desc {
   font-size: 11px;
-  color: rgba(0, 204, 51, 0.5);
+  color: rgba(0, 204, 51, 0.7);
   line-height: 1.5;
 }
 
@@ -661,9 +661,9 @@ body::after {
 .footer {
   text-align: center;
   padding: 40px 0 20px;
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: rgba(0, 204, 51, 0.2);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: rgba(0, 204, 51, 0.5);
   opacity: 0;
   animation: fadeUp 0.6s ease forwards 3.2s;
 }
@@ -684,15 +684,15 @@ body::after {
 }
 
 .footer .author {
-  color: var(--green-dark);
+  color: var(--green-dim);
   margin-bottom: 12px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .footer .promo {
-  color: rgba(0, 204, 51, 0.25);
+  color: var(--green-dim);
   margin-top: 12px;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   font-style: italic;
 }
