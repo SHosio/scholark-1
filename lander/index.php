@@ -1,17 +1,31 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cta_click') {
-    $db = new SQLite3(__DIR__ . '/analytics.db');
-    $db->exec('CREATE TABLE IF NOT EXISTS clicks (id INTEGER PRIMARY KEY, clicked_at TEXT, ip TEXT, ua TEXT)');
-    $stmt = $db->prepare('INSERT INTO clicks (clicked_at, ip, ua) VALUES (:at, :ip, :ua)');
-    $stmt->bindValue(':at', date('c'));
-    $stmt->bindValue(':ip', $_SERVER['REMOTE_ADDR'] ?? '');
-    $stmt->bindValue(':ua', $_SERVER['HTTP_USER_AGENT'] ?? '');
-    $stmt->execute();
-    $count = $db->querySingle('SELECT COUNT(*) FROM clicks');
-    header('Content-Type: application/json');
-    echo json_encode(['ok' => true, 'total' => $count]);
-    exit;
+$db = new SQLite3(__DIR__ . '/analytics.db');
+$db->exec('CREATE TABLE IF NOT EXISTS clicks (id INTEGER PRIMARY KEY, clicked_at TEXT, ip TEXT, ua TEXT)');
+$db->exec('CREATE TABLE IF NOT EXISTS robot_clicks (id INTEGER PRIMARY KEY, total INTEGER DEFAULT 0)');
+$db->exec('INSERT OR IGNORE INTO robot_clicks (id, total) VALUES (1, 0)');
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'cta_click') {
+        $stmt = $db->prepare('INSERT INTO clicks (clicked_at, ip, ua) VALUES (:at, :ip, :ua)');
+        $stmt->bindValue(':at', date('c'));
+        $stmt->bindValue(':ip', $_SERVER['REMOTE_ADDR'] ?? '');
+        $stmt->bindValue(':ua', $_SERVER['HTTP_USER_AGENT'] ?? '');
+        $stmt->execute();
+        $count = $db->querySingle('SELECT COUNT(*) FROM clicks');
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true, 'total' => $count]);
+        exit;
+    }
+    if ($_POST['action'] === 'robot_click') {
+        $db->exec('UPDATE robot_clicks SET total = total + 1 WHERE id = 1');
+        $total = $db->querySingle('SELECT total FROM robot_clicks WHERE id = 1');
+        header('Content-Type: application/json');
+        echo json_encode(['total' => $total]);
+        exit;
+    }
 }
+
+$robotClicks = $db->querySingle('SELECT total FROM robot_clicks WHERE id = 1') ?: 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,6 +165,50 @@ body::after {
   line-height: 1;
   animation: entity-breathe 4s ease-in-out infinite;
   filter: grayscale(1) brightness(0.8) sepia(1) hue-rotate(70deg) saturate(5);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s ease;
+}
+
+.entity-icon:active {
+  transform: scale(0.9);
+}
+
+.entity-icon.clicked {
+  animation: robot-bonk 0.3s ease;
+}
+
+@keyframes robot-bonk {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.15) rotate(-5deg); }
+  50% { transform: scale(0.95) rotate(3deg); }
+  75% { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.robot-counter {
+  font-size: 10px;
+  color: var(--green-dark);
+  letter-spacing: 0.1em;
+  margin-top: 8px;
+  transition: color 0.3s ease;
+}
+
+.robot-counter.flash {
+  color: var(--green);
+}
+
+.click-particle {
+  position: absolute;
+  font-size: 14px;
+  pointer-events: none;
+  animation: particle-fly 0.8s ease-out forwards;
+  z-index: 100;
+}
+
+@keyframes particle-fly {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.5); }
 }
 
 @keyframes entity-breathe {
@@ -610,7 +668,8 @@ body::after {
 
   <!-- Entity -->
   <div class="ascii-entity">
-    <div class="entity-icon">&#x1F916;</div>
+    <div class="entity-icon" id="robot-btn" title="Click me.">&#x1F916;</div>
+    <div class="robot-counter" id="robot-counter"><?= number_format($robotClicks) ?> researchers have poked the robot</div>
     <div id="boot-sequence" style="margin-top: 16px;"></div>
   </div>
 
@@ -746,6 +805,44 @@ function ctaClick(e) {
   }).catch(() => {});
   window.open('https://github.com/SHosio/scholark-1', '_blank');
 }
+
+// Robot cookie clicker
+const robotBtn = document.getElementById('robot-btn');
+const robotCounter = document.getElementById('robot-counter');
+const particles = ['+1', '📄', '📚', '🔬', '🧪', '📖', '🎓', '⚡'];
+
+robotBtn.addEventListener('click', function(e) {
+  // Bonk animation
+  this.classList.remove('clicked');
+  void this.offsetWidth; // force reflow
+  this.classList.add('clicked');
+
+  // Flash counter
+  robotCounter.classList.add('flash');
+  setTimeout(() => robotCounter.classList.remove('flash'), 300);
+
+  // Floating particle
+  const particle = document.createElement('span');
+  particle.className = 'click-particle';
+  particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+  particle.style.left = (e.clientX - 10) + 'px';
+  particle.style.top = (e.clientY - 10) + 'px';
+  particle.style.position = 'fixed';
+  document.body.appendChild(particle);
+  setTimeout(() => particle.remove(), 800);
+
+  // Send to server
+  fetch(window.location.href, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'action=robot_click'
+  })
+  .then(r => r.json())
+  .then(data => {
+    robotCounter.textContent = Number(data.total).toLocaleString() + ' researchers have poked the robot';
+  })
+  .catch(() => {});
+});
 
 // Matrix rain
 const canvas = document.getElementById('matrix-rain');
