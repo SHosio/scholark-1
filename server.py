@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 load_dotenv()
-from apis import semantic_scholar, crossref, openalex, pubmed, unpaywall
+from apis import semantic_scholar, crossref, openalex, pubmed, unpaywall, scholark_api
 from apis.errors import SourceUnavailable
 from cache import CacheDB
 
@@ -41,6 +41,19 @@ def _get_cache() -> CacheDB:
     if _cache is None:
         _cache = CacheDB()
     return _cache
+
+
+def _get_api_key() -> str | None:
+    """Get the Scholark API key from environment, or None."""
+    return os.environ.get("SCHOLARK_API_KEY")
+
+
+_UPGRADE_MSG = (
+    "This is a Scholark premium feature. "
+    "Get your API key at https://scholark.dev/pricing\n\n"
+    "Add to your .env:\n"
+    "  SCHOLARK_API_KEY=sk-your-key-here"
+)
 
 
 def _deduplicate_results(sections: list[str]) -> tuple[list[str], int]:
