@@ -89,6 +89,29 @@ claude mcp add -s project scholark-1 -- uv run --project /path/to/scholark-1 sch
 
 **Add a Semantic Scholar API key:** Free to request, gives you a dedicated rate limit instead of sharing the pool.
 
+## How to Use
+
+The straightforward way — ask your AI to find papers:
+
+```
+"Find recent papers on retrieval-augmented generation"
+"Get the BibTeX for 10.1145/3491102.3517582"
+"Search for work on LLM hallucination detection from 2023-2025"
+```
+
+But agentic tools aren't fixed API calls. The real power comes from combining Scholark with what the LLM already does well — reading your work and reasoning about it. Try this:
+
+**Blind spot analysis:** Point your AI at your .tex file and ask it to identify gaps in your literature, search for papers that fill those gaps, and generate a `studyplan.html` with clickable DOI links and reasoning for each suggestion.
+
+```
+"Read my paper.tex, identify 3 blind spots in the literature,
+use Scholark to find papers that address them, and generate
+a studyplan.html with clickable links and notes on how each
+paper relates to what's missing"
+```
+
+The AI reads your argument, spots what's thin, searches real databases instead of hallucinating references, and gives you a browsable reading plan. Each component does what it's best at.
+
 ## Works With
 
 - **Claude Code** — spawned via MCP stdio transport

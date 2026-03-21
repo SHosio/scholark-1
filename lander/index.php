@@ -596,6 +596,83 @@ body::after {
   color: var(--green);
 }
 
+/* How to use section */
+.usage-section {
+  margin: 50px 0;
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards 2.7s;
+}
+
+.usage-intro {
+  font-size: 12px;
+  color: var(--green-dim);
+  line-height: 1.7;
+  margin: 16px 0 24px;
+}
+
+.usage-intro em {
+  color: var(--green);
+  font-style: normal;
+}
+
+.usage-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.usage-example {
+  background: rgba(0, 255, 65, 0.03);
+  border-left: 2px solid var(--green-dark);
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--green-dim);
+  font-family: 'Share Tech Mono', monospace;
+  transition: all 0.3s ease;
+}
+
+.usage-example:hover {
+  border-left-color: var(--green);
+  background: var(--green-faint);
+}
+
+.usage-advanced {
+  border: 1px solid var(--green-dark);
+  padding: 20px 24px;
+  margin-top: 16px;
+}
+
+.usage-advanced-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--green-dark);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.usage-advanced-text {
+  font-size: 12px;
+  color: var(--green-dim);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.usage-advanced-text em {
+  color: var(--green);
+  font-style: normal;
+}
+
+.usage-prompt {
+  background: rgba(0, 255, 65, 0.03);
+  border: 1px solid var(--green-dark);
+  padding: 16px 20px;
+  font-size: 11px;
+  color: var(--green);
+  line-height: 1.8;
+  font-family: 'Share Tech Mono', monospace;
+}
+
 /* CTA section */
 .cta-section {
   text-align: center;
@@ -847,6 +924,23 @@ body::after {
       <span class="command">claude mcp add -s project scholark-1 -- uvx --from git+https://github.com/SHosio/scholark-1 scholark-1</span><br><br>
       <span class="comment"># 2. Ask your AI to search for papers. That's it.</span><br>
       <span class="command">"Find recent papers on retrieval-augmented generation for scientific literature"</span>
+    </div>
+  </div>
+
+  <!-- How to Use -->
+  <div class="usage-section">
+    <div class="tools-header">// HOW TO USE</div>
+    <div class="usage-intro">The straightforward way — just ask:</div>
+    <div class="usage-examples">
+      <div class="usage-example">"Find recent papers on retrieval-augmented generation"</div>
+      <div class="usage-example">"Get the BibTeX for 10.1145/3491102.3517582"</div>
+      <div class="usage-example">"Search for work on LLM hallucination detection from 2023–2025"</div>
+    </div>
+    <div class="usage-advanced">
+      <div class="usage-advanced-label">Beyond API calls</div>
+      <div class="usage-advanced-text">Agentic tools aren't fixed interfaces — they combine with what the AI already does well. Scholark gives real papers. The AI reads your work, reasons about it, and connects the two. Try pointing it at your manuscript:</div>
+      <div class="usage-prompt">"Read my paper.tex, identify 3 blind spots in the literature, use Scholark to find papers that address them, and generate a studyplan.html with clickable DOI links and notes on how each paper relates to what's missing"</div>
+      <div class="usage-advanced-text" style="margin-top: 16px; margin-bottom: 0;">The AI reads your argument, spots what's thin, searches real databases instead of hallucinating references, and gives you a browsable reading plan with clickable DOIs. Each component does what it's best at.</div>
     </div>
   </div>
 
