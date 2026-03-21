@@ -93,7 +93,7 @@ async def _try_source(source_fn, name, query, limit):
 
 
 @mcp.tool()
-async def search_papers(query: str, limit: int = 10) -> str:
+async def search_papers(query: str, limit: int = 5) -> str:
     """Search for academic papers across multiple databases.
 
     Searches Semantic Scholar, OpenAlex, Crossref, and Europe PMC in parallel.
@@ -102,7 +102,7 @@ async def search_papers(query: str, limit: int = 10) -> str:
 
     Args:
         query: Search query (natural language or keywords)
-        limit: Max results per source (default 10)
+        limit: Max results per source (default 5)
     """
     results = await asyncio.gather(
         _try_source(semantic_scholar.search, "Semantic Scholar", query, limit),
@@ -188,7 +188,7 @@ async def search_by_topic(
     topic: str,
     year_start: int | None = None,
     year_end: int | None = None,
-    limit: int = 10,
+    limit: int = 5,
 ) -> str:
     """Search for papers by topic with optional year range filtering.
 
@@ -199,7 +199,7 @@ async def search_by_topic(
         topic: Research topic or keywords
         year_start: Start year filter (optional)
         year_end: End year filter (optional)
-        limit: Max results (default 10)
+        limit: Max results (default 5)
     """
     # Sources that support year filtering
     year_sources = [
