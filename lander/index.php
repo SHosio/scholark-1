@@ -778,7 +778,7 @@ body::after {
   <div class="capabilities">
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>WHAT</div>
-      <div class="cap-value">An MCP server that gives your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. 6 tools, 5 databases, zero hallucinated references.</div>
+      <div class="cap-value">An MCP server that gives your AI agent direct access to real academic papers, real metadata, real BibTeX, and real open access PDFs. 6 tools, 5 data sources, zero hallucinated references.</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>HOW</div>
@@ -859,7 +859,8 @@ body::after {
       </div>
       <a href="https://github.com/SHosio/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">Install scholark-1</a>
       <div class="cta-secondary">
-        No API keys required to start. All 5 core tools work immediately.
+        No API keys required to start. All 5 core tools work immediately.<br>
+        Optional config unlocks open access PDFs and higher rate limits — <a href="https://github.com/SHosio/scholark-1#configuration" style="color: rgba(0, 204, 51, 0.7);">see README</a>.
       </div>
     </div>
   </div>

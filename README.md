@@ -57,19 +57,33 @@ That's it. Ask your AI assistant to search for papers and it will use Scholark a
 
 ## Configuration
 
-All configuration is optional. Without any `.env` file, 5 of 6 tools work immediately.
-
-```bash
-cp .env.example .env
-```
+All configuration is optional. Without any config, 5 of 6 tools work immediately.
 
 | Variable | Required? | What it does | How to get it |
 |---|---|---|---|
+| `UNPAYWALL_EMAIL` | For `find_open_access` | Enables open access PDF lookup | Just your email |
 | `SEMANTIC_SCHOLAR_API_KEY` | No | Higher rate limits | [Free key](https://www.semanticscholar.org/product/api#api-key) |
 | `OPENALEX_EMAIL` | No | Priority request queue | Just your email |
-| `UNPAYWALL_EMAIL` | For `find_open_access` | Enables open access PDF lookup | Just your email |
 
-**Without any keys:** `search_papers`, `fetch_paper_details`, `search_by_topic`, `doi_to_bibtex`, and `get_citation_context` all work. You get results from Semantic Scholar, OpenAlex, Crossref, and Europe PMC.
+Pass env vars with `-e` when installing:
+
+```bash
+claude mcp add -s project scholark-1 \
+  -e UNPAYWALL_EMAIL=you@example.com \
+  -- uvx --from git+https://github.com/SHosio/scholark-1 scholark-1
+```
+
+Or if you prefer a local clone (gives you a `.env` file for configuration):
+
+```bash
+git clone https://github.com/SHosio/scholark-1.git
+cd scholark-1
+uv sync
+cp .env.example .env  # edit with your email/keys
+claude mcp add -s project scholark-1 -- uv run --project /path/to/scholark-1 scholark-1
+```
+
+**Without any config:** `search_papers`, `fetch_paper_details`, `search_by_topic`, `doi_to_bibtex`, and `get_citation_context` all work. You get results from Semantic Scholar, OpenAlex, Crossref, and Europe PMC.
 
 **Add your email for Unpaywall:** Unlocks `find_open_access` — no signup, no API key, just an email address for contact purposes.
 
