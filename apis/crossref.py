@@ -8,7 +8,7 @@ from apis.errors import SourceUnavailable, RateLimited
 BASE_URL = "https://api.crossref.org/works"
 
 
-def format_paper(item: dict) -> str:
+def format_paper(item: dict, compact: bool = False) -> str:
     """Format a Crossref work item into human-readable text."""
     title_list = item.get("title") or ["Not available"]
     title = title_list[0] if title_list else "Not available"
@@ -23,9 +23,6 @@ def format_paper(item: dict) -> str:
     doi = item.get("DOI", "Not available")
     venue_list = item.get("container-title") or []
     venue = venue_list[0] if venue_list else "Not available"
-    abstract = item.get("abstract", "Not available")
-    if abstract != "Not available":
-        abstract = re.sub(r"<[^>]+>", "", abstract).strip()
     citations = item.get("is-referenced-by-count", "Unknown")
 
     lines = [
@@ -35,9 +32,13 @@ def format_paper(item: dict) -> str:
         f"  DOI: {doi}",
         f"  Venue: {venue}",
         f"  Citations: {citations}",
-        f"  Abstract: {abstract}",
-        "  [Source: Crossref]",
     ]
+    if not compact:
+        abstract = item.get("abstract", "Not available")
+        if abstract != "Not available":
+            abstract = re.sub(r"<[^>]+>", "", abstract).strip()
+        lines.append(f"  Abstract: {abstract}")
+    lines.append("  [Source: Crossref]")
     return "\n".join(lines)
 
 
@@ -59,7 +60,7 @@ async def _call_api(url, params=None):
         raise SourceUnavailable("Crossref", f"HTTP {e.response.status_code}")
 
 
-async def search(query: str, limit: int = 10) -> str:
+async def search(query: str, limit: int = 10, compact: bool = False) -> str:
     """Search Crossref for papers."""
     if not query.strip():
         raise SourceUnavailable("Crossref", "empty query")
@@ -73,7 +74,7 @@ async def search(query: str, limit: int = 10) -> str:
     if not items:
         raise SourceUnavailable("Crossref", "no results")
 
-    results = [format_paper(item) for item in items]
+    results = [format_paper(item, compact=compact) for item in items]
     return "\n\n".join(results)
 
 

@@ -11,7 +11,7 @@ from apis.errors import SourceUnavailable, RateLimited
 BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 
 
-def format_paper(paper: dict) -> str:
+def format_paper(paper: dict, compact: bool = False) -> str:
     """Format a Europe PMC paper into human-readable text with source attribution."""
     title = paper.get("title") or "No title"
     authors = paper.get("authorString") or "Not available"
@@ -20,7 +20,6 @@ def format_paper(paper: dict) -> str:
     pmid = paper.get("pmid") or "Not available"
     pmcid = paper.get("pmcid") or "Not available"
     venue = paper.get("journalTitle") or "Not available"
-    abstract = paper.get("abstractText") or "Not available"
     citations = paper.get("citedByCount", "Unknown")
     is_open = "Yes" if paper.get("isOpenAccess") == "Y" else "No"
 
@@ -34,9 +33,11 @@ def format_paper(paper: dict) -> str:
         f"  Venue: {venue}",
         f"  Citations: {citations}",
         f"  Open Access: {is_open}",
-        f"  Abstract: {abstract}",
-        "  [Source: Europe PMC]",
     ]
+    if not compact:
+        abstract = paper.get("abstractText") or "Not available"
+        lines.append(f"  Abstract: {abstract}")
+    lines.append("  [Source: Europe PMC]")
     return "\n".join(lines)
 
 
@@ -50,7 +51,7 @@ async def _call_api(url, params):
         raise SourceUnavailable("Europe PMC", f"HTTP {e.response.status_code}")
 
 
-async def search(query: str, limit: int = 10) -> str:
+async def search(query: str, limit: int = 10, compact: bool = False) -> str:
     """Search Europe PMC for papers matching query."""
     if not query.strip():
         raise SourceUnavailable("Europe PMC", "empty query")
@@ -70,7 +71,7 @@ async def search(query: str, limit: int = 10) -> str:
     if not results:
         raise SourceUnavailable("Europe PMC", "no results")
 
-    return "\n\n".join(format_paper(p) for p in results)
+    return "\n\n".join(format_paper(p, compact=compact) for p in results)
 
 
 async def get_paper_details(paper_id: str) -> str:
@@ -94,7 +95,7 @@ async def get_paper_details(paper_id: str) -> str:
 
 
 async def search_by_topic(
-    topic: str, year_start: int | None = None, year_end: int | None = None, limit: int = 10
+    topic: str, year_start: int | None = None, year_end: int | None = None, limit: int = 10, compact: bool = False
 ) -> str:
     """Search by topic with optional year filtering."""
     if not topic.strip():
@@ -121,4 +122,4 @@ async def search_by_topic(
     if not results:
         raise SourceUnavailable("Europe PMC", "no results for this topic")
 
-    return "\n\n".join(format_paper(p) for p in results)
+    return "\n\n".join(format_paper(p, compact=compact) for p in results)

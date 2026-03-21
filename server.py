@@ -84,10 +84,10 @@ def _deduplicate_results(sections: list[str]) -> tuple[list[str], int]:
     return deduped_sections, total_removed
 
 
-async def _try_source(source_fn, name, query, limit):
+async def _try_source(source_fn, name, query, limit, compact=False):
     """Try a search source, return formatted section string."""
     try:
-        return f"=== {name} Results ===\n\n{await source_fn(query, limit)}"
+        return f"=== {name} Results ===\n\n{await source_fn(query, limit, compact=compact)}"
     except SourceUnavailable as e:
         return f"=== {name} ===\n{name} unavailable ({e.reason})."
 
@@ -97,18 +97,18 @@ async def search_papers(query: str, limit: int = 5) -> str:
     """Search for academic papers across multiple databases.
 
     Searches Semantic Scholar, OpenAlex, Crossref, and Europe PMC in parallel.
-    Results are deduplicated by DOI across sources. Returns results with clear
-    source attribution. May be incomplete — always verify important findings manually.
+    Results are deduplicated by DOI across sources. Returns compact results
+    (no abstracts) — use fetch_paper_details for full abstracts and metadata.
 
     Args:
         query: Search query (natural language or keywords)
         limit: Max results per source (default 5)
     """
     results = await asyncio.gather(
-        _try_source(semantic_scholar.search, "Semantic Scholar", query, limit),
-        _try_source(openalex.search, "OpenAlex", query, limit),
-        _try_source(crossref.search, "Crossref", query, limit),
-        _try_source(pubmed.search, "Europe PMC", query, limit),
+        _try_source(semantic_scholar.search, "Semantic Scholar", query, limit, compact=True),
+        _try_source(openalex.search, "OpenAlex", query, limit, compact=True),
+        _try_source(crossref.search, "Crossref", query, limit, compact=True),
+        _try_source(pubmed.search, "Europe PMC", query, limit, compact=True),
     )
 
     sections, dupes_removed = _deduplicate_results(list(results))
@@ -211,7 +211,7 @@ async def search_by_topic(
     for source_fn, name in year_sources:
         try:
             result = await source_fn(
-                topic, year_start=year_start, year_end=year_end, limit=limit
+                topic, year_start=year_start, year_end=year_end, limit=limit, compact=True
             )
             fallback_note = " (fallback)" if name != "Semantic Scholar" else ""
             return result + (
@@ -223,7 +223,7 @@ async def search_by_topic(
 
     # Crossref last — no year filtering
     try:
-        result = await crossref.search(topic, limit=limit)
+        result = await crossref.search(topic, limit=limit, compact=True)
         note = "(Crossref fallback"
         if year_start or year_end:
             note += " — year filtering not applied"

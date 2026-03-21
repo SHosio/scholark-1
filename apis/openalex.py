@@ -22,7 +22,7 @@ def _reconstruct_abstract(inverted_index: dict | None) -> str:
     return " ".join(word for _, word in word_positions)
 
 
-def format_paper(work: dict) -> str:
+def format_paper(work: dict, compact: bool = False) -> str:
     """Format an OpenAlex work into human-readable text with source attribution."""
     title = work.get("title") or "No title"
     authorships = work.get("authorships") or []
@@ -38,7 +38,6 @@ def format_paper(work: dict) -> str:
     citations = work.get("cited_by_count", "Unknown")
     oa = work.get("open_access") or {}
     is_open = "Yes" if oa.get("is_oa") else "No"
-    abstract = _reconstruct_abstract(work.get("abstract_inverted_index"))
 
     lines = [
         f"**{title}**",
@@ -48,9 +47,11 @@ def format_paper(work: dict) -> str:
         f"  Venue: {venue}",
         f"  Citations: {citations}",
         f"  Open Access: {is_open}",
-        f"  Abstract: {abstract}",
-        "  [Source: OpenAlex]",
     ]
+    if not compact:
+        abstract = _reconstruct_abstract(work.get("abstract_inverted_index"))
+        lines.append(f"  Abstract: {abstract}")
+    lines.append("  [Source: OpenAlex]")
     return "\n".join(lines)
 
 
@@ -68,7 +69,7 @@ async def _call_api(url, params=None):
         raise SourceUnavailable("OpenAlex", f"HTTP {e.response.status_code}")
 
 
-async def search(query: str, limit: int = 10) -> str:
+async def search(query: str, limit: int = 10, compact: bool = False) -> str:
     """Search OpenAlex for papers matching query."""
     if not query.strip():
         raise SourceUnavailable("OpenAlex", "empty query")
@@ -81,7 +82,7 @@ async def search(query: str, limit: int = 10) -> str:
     if not data or not data.get("results"):
         raise SourceUnavailable("OpenAlex", "no results")
 
-    results = [format_paper(work) for work in data["results"]]
+    results = [format_paper(work, compact=compact) for work in data["results"]]
     return "\n\n".join(results)
 
 
@@ -100,6 +101,7 @@ async def search_by_topic(
     year_start: int | None = None,
     year_end: int | None = None,
     limit: int = 10,
+    compact: bool = False,
 ) -> str:
     """Search by topic with optional year filtering."""
     if not topic.strip():
@@ -119,5 +121,5 @@ async def search_by_topic(
     if not data or not data.get("results"):
         raise SourceUnavailable("OpenAlex", "no results for this topic")
 
-    results = [format_paper(work) for work in data["results"]]
+    results = [format_paper(work, compact=compact) for work in data["results"]]
     return "\n\n".join(results)

@@ -13,7 +13,7 @@ SEARCH_FIELDS = (
 )
 
 
-def format_paper(paper: dict) -> str:
+def format_paper(paper: dict, compact: bool = False) -> str:
     """Format a Semantic Scholar paper into human-readable text with source attribution."""
     title = paper.get("title") or "No title"
     authors = ", ".join(a.get("name", "Unknown") for a in paper.get("authors", []))
@@ -21,11 +21,8 @@ def format_paper(paper: dict) -> str:
     ext_ids = paper.get("externalIds") or {}
     doi = ext_ids.get("DOI", "Not available")
     venue = paper.get("venue") or "Not available"
-    abstract = paper.get("abstract") or "Not available"
     citations = paper.get("citationCount", "Unknown")
     is_open = "Yes" if paper.get("isOpenAccess") else "No"
-    pdf_data = paper.get("openAccessPdf") or {}
-    pdf_url = pdf_data.get("url", "Not available")
     tldr_data = paper.get("tldr") or {}
     tldr = tldr_data.get("text", "")
 
@@ -37,11 +34,18 @@ def format_paper(paper: dict) -> str:
         f"  Venue: {venue}",
         f"  Citations: {citations}",
         f"  Open Access: {is_open}",
-        f"  PDF: {pdf_url}",
-        f"  Abstract: {abstract}",
     ]
-    if tldr:
-        lines.append(f"  TL;DR: {tldr}")
+    if compact:
+        if tldr:
+            lines.append(f"  TL;DR: {tldr}")
+    else:
+        pdf_data = paper.get("openAccessPdf") or {}
+        pdf_url = pdf_data.get("url", "Not available")
+        abstract = paper.get("abstract") or "Not available"
+        lines.append(f"  PDF: {pdf_url}")
+        lines.append(f"  Abstract: {abstract}")
+        if tldr:
+            lines.append(f"  TL;DR: {tldr}")
     lines.append("  [Source: Semantic Scholar]")
     return "\n".join(lines)
 
@@ -64,7 +68,7 @@ async def _call_api(url, params):
         raise SourceUnavailable("Semantic Scholar", f"HTTP {e.response.status_code}")
 
 
-async def search(query: str, limit: int = 10) -> str:
+async def search(query: str, limit: int = 10, compact: bool = False) -> str:
     """Search Semantic Scholar for papers matching query."""
     if not query.strip():
         raise SourceUnavailable("Semantic Scholar", "empty query")
@@ -84,7 +88,7 @@ async def search(query: str, limit: int = 10) -> str:
     if truncated:
         results.append("Note: Query was truncated to 300 characters.")
     for paper in data["data"]:
-        results.append(format_paper(paper))
+        results.append(format_paper(paper, compact=compact))
 
     return "\n\n".join(results)
 
@@ -160,7 +164,7 @@ async def get_citation_context(paper_id: str, limit: int = 10) -> str:
 
 
 async def search_by_topic(
-    topic: str, year_start: int | None = None, year_end: int | None = None, limit: int = 10
+    topic: str, year_start: int | None = None, year_end: int | None = None, limit: int = 10, compact: bool = False
 ) -> str:
     """Search by topic with optional year filtering."""
     if not topic.strip():
@@ -186,6 +190,6 @@ async def search_by_topic(
     if truncated:
         results.append("Note: Query was truncated to 300 characters.")
     for paper in data["data"]:
-        results.append(format_paper(paper))
+        results.append(format_paper(paper, compact=compact))
 
     return "\n\n".join(results)
