@@ -332,5 +332,9 @@ async def find_open_access(doi: str) -> str:
 
 
 
-if __name__ == "__main__":
+def main():
     mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()

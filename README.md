@@ -22,22 +22,21 @@ Your AI assistant is brilliant at reasoning, but it can't search academic databa
 
 ## Quick Start
 
+One command, from any project:
+
 ```bash
-git clone https://github.com/SHosio/scholark-1.git
-cd scholark-1
-uv sync
-uv run python server.py
+claude mcp add -s project scholark-1 -- uvx --from git+https://github.com/SHosio/scholark-1 scholark-1
 ```
 
-Register in Claude Code (or any MCP-compatible client):
+Or add it manually to your `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "scholark-1": {
       "type": "stdio",
-      "command": "uv",
-      "args": ["run", "--project", "/path/to/scholark-1", "python", "server.py"]
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/SHosio/scholark-1", "scholark-1"]
     }
   }
 }

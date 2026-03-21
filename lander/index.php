@@ -786,7 +786,7 @@ body::after {
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>SETUP</div>
-      <div class="cap-value">Clone. Install. Go. Zero API keys required. Works with Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP-compatible client.</div>
+      <div class="cap-value">One command to install. Zero API keys required. Works with Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP-compatible client.</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>COST</div>
@@ -841,13 +841,11 @@ body::after {
 
   <!-- Setup -->
   <div class="setup-section">
-    <div class="tools-header">// 3-STEP SETUP</div>
+    <div class="tools-header">// 2-STEP SETUP</div>
     <div class="setup-code">
-      <span class="comment"># 1. Clone and install</span><br>
-      <span class="command">git clone https://github.com/SHosio/scholark-1.git && cd scholark-1 && uv sync</span><br><br>
-      <span class="comment"># 2. Register in Claude Code (or any MCP client)</span><br>
-      <span class="command">claude mcp add scholark-1 -- uv run --project /path/to/scholark-1 python server.py</span><br><br>
-      <span class="comment"># 3. Ask your AI to search for papers. That's it.</span><br>
+      <span class="comment"># 1. Add to any project</span><br>
+      <span class="command">claude mcp add -s project scholark-1 -- uvx --from git+https://github.com/SHosio/scholark-1 scholark-1</span><br><br>
+      <span class="comment"># 2. Ask your AI to search for papers. That's it.</span><br>
       <span class="command">"Find recent papers on retrieval-augmented generation for scientific literature"</span>
     </div>
   </div>
@@ -859,7 +857,7 @@ body::after {
         Free and open source. MIT licensed.<br>
         Give your AI agent the academic literature it's been missing.
       </div>
-      <a href="https://github.com/SHosio/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">git clone scholark-1</a>
+      <a href="https://github.com/SHosio/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">Install scholark-1</a>
       <div class="cta-secondary">
         No API keys required to start. All 5 core tools work immediately.
       </div>

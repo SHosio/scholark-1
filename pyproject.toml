@@ -10,6 +10,16 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.scripts]
+scholark-1 = "server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [".", "apis"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
