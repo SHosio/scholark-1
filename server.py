@@ -27,7 +27,14 @@ mcp = FastMCP(
         "and should be treated as potentially incomplete. Always tell the user which "
         "source provided each result. If data is missing or a fallback source was used, "
         "say so explicitly. Never present these results as exhaustive — recommend the "
-        "user verify important findings manually."
+        "user verify important findings manually.\n\n"
+        "CRITICAL — METADATA INTEGRITY: Never silently override, correct, or substitute "
+        "metadata returned by these tools (author names, titles, dates) with your own "
+        "knowledge. The API data is authoritative. If a returned author name differs from "
+        "what you expect, use the returned name — do not replace it with a more famous "
+        "researcher's name. Only flag a potential metadata issue to the user if the data "
+        "is clearly garbled or fields are missing. When metadata looks normal, use it as-is "
+        "without comment."
     ),
 )
 
@@ -130,7 +137,10 @@ async def fetch_paper_details(paper_id: str) -> str:
 
     Tries Semantic Scholar first, then falls back through OpenAlex, Crossref,
     and Europe PMC for DOI-shaped identifiers.
-    Results should be verified against the original publication.
+
+    IMPORTANT: Use returned metadata (authors, titles, dates) exactly as-is.
+    Never substitute author names with different names from your training data,
+    even if a name resembles a more well-known researcher.
 
     Args:
         paper_id: DOI (e.g. '10.1234/test'), Semantic Scholar ID, or prefixed ID
@@ -166,7 +176,10 @@ async def fetch_paper_details(paper_id: str) -> str:
             if is_doi:
                 cache.put(f"paper_details:{normalized_id}", result, name)
             fallback_note = " (fallback)" if name != "Semantic Scholar" else ""
-            return result + f"\n\n---\nNote: Data from {name}{fallback_note}. Verify against the original publication."
+            return (
+                result + f"\n\n---\nNote: Data from {name}{fallback_note}. Verify against the original publication."
+                "\nUse author names and metadata exactly as returned — do not substitute from training data."
+            )
         except SourceUnavailable:
             continue
 

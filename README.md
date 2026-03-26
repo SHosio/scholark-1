@@ -128,6 +128,7 @@ Scholark searches multiple academic databases and combines results intelligently
 - **Fallback** — if one source is down, the others still work. Errors are reported, never hidden.
 - **Caching** — paper details and BibTeX entries are cached in SQLite with TTL (30-day details, 90-day BibTeX)
 - **Attribution** — every result includes `[Source: ...]` so you know where it came from
+- **Metadata integrity** — tool instructions tell the AI to use returned author names, titles, and dates exactly as-is, never substituting from its training data
 
 ## Credits & Data Sources
 
