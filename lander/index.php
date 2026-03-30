@@ -1,5 +1,7 @@
 <?php
 $db = new SQLite3(__DIR__ . '/analytics.db');
+$db->busyTimeout(5000);
+$db->exec('PRAGMA journal_mode=WAL');
 $db->exec('CREATE TABLE IF NOT EXISTS clicks (id INTEGER PRIMARY KEY, clicked_at TEXT, ip TEXT, ua TEXT)');
 $db->exec('CREATE TABLE IF NOT EXISTS robot_clicks (id INTEGER PRIMARY KEY, total INTEGER DEFAULT 0)');
 $db->exec('INSERT OR IGNORE INTO robot_clicks (id, total) VALUES (1, 0)');
@@ -33,8 +35,18 @@ $robotClicks = $db->querySingle('SELECT total FROM robot_clicks WHERE id = 1') ?
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 <title>SCHOLARK-1 // Autonomous Research Intelligence</title>
 <meta name="description" content="Free, open-source MCP server that gives your AI agent access to real academic papers, real citations, and real BibTeX. No hallucinated references.">
+<meta property="og:title" content="SCHOLARK-1 // Autonomous Research Intelligence">
+<meta property="og:description" content="Free, open-source MCP server that gives your AI agent access to real academic papers, real citations, and real BibTeX. No hallucinated references.">
+<meta property="og:image" content="https://simohosio.com/scholark-1/card.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simohosio.com/scholark-1">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SCHOLARK-1 // Autonomous Research Intelligence">
+<meta name="twitter:description" content="Free, open-source MCP server for real academic papers, citations, and BibTeX.">
+<meta name="twitter:image" content="https://simohosio.com/scholark-1/card.jpg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Share+Tech+Mono&display=swap');
 
