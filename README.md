@@ -119,6 +119,27 @@ The AI reads your argument, spots what's thin, searches real databases instead o
 - **Cursor, Windsurf** — any MCP-compatible AI editor
 - **Any MCP client** — standard protocol, no vendor lock-in
 
+## Tips
+
+**Allow Scholark tools automatically.** By default, Claude Code asks permission every time an MCP tool runs. To skip the prompts for Scholark, add the tools to your project's allowlist in `.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__scholark-1__search_papers",
+      "mcp__scholark-1__fetch_paper_details",
+      "mcp__scholark-1__search_by_topic",
+      "mcp__scholark-1__doi_to_bibtex",
+      "mcp__scholark-1__find_open_access",
+      "mcp__scholark-1__get_citation_context"
+    ]
+  }
+}
+```
+
+You can also allow `WebFetch` and `WebSearch` if you want the AI to follow DOI links and find full-text PDFs without asking. **Know what you're allowing** — `WebFetch` lets the agent read any URL, and `WebSearch` lets it query the open web. These are Claude Code built-in tools, not Scholark tools. Add them only if you're comfortable with that scope.
+
 ## How It Works
 
 Scholark searches multiple academic databases and combines results intelligently:
