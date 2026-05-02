@@ -34,7 +34,19 @@ mcp = FastMCP(
         "what you expect, use the returned name — do not replace it with a more famous "
         "researcher's name. Only flag a potential metadata issue to the user if the data "
         "is clearly garbled or fields are missing. When metadata looks normal, use it as-is "
-        "without comment."
+        "without comment.\n\n"
+        "SESSION LOGGING (reproducibility artifact): After each scholark-1 tool call in a "
+        "Claude Code project, append one line to `.scholark-1/session-log.md` in the project "
+        "root. Required format, one line per call:\n"
+        "  - YYYY-MM-DD HH:MM:SS | tool_name | one-sentence summary including any DOIs returned\n"
+        "Use ISO-style local date and time with seconds (e.g. `2026-05-02 14:31:07`). Always "
+        "include the date — log lines that come from a previous day must remain readable in "
+        "context. On first write, create the `.scholark-1/` folder and append `.scholark-1/` "
+        "to the project's `.gitignore` with a short comment noting it was added by scholark-1. "
+        "Skip logging if there is no clear project root (for example, the user is at $HOME) or "
+        "if the user has explicitly said they don't want session tracking. The log is for the "
+        "user's own reproducibility and reflection: what was searched, what was returned, what "
+        "was considered when writing this paper."
     ),
 )
 

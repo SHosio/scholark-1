@@ -833,7 +833,7 @@ body::after {
   <!-- Status Bar -->
   <div class="status-bar">
     <div><span class="status-dot"></span>SYSTEM ONLINE</div>
-    <div>FREE & OPEN SOURCE</div>
+    <div>FOR CLAUDE CODE</div>
     <div>MIT LICENSE</div>
   </div>
 
@@ -875,7 +875,7 @@ body::after {
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>SETUP</div>
-      <div class="cap-value">One command to install. Zero API keys required. Works with Claude Code, Claude Desktop, Cursor, Windsurf, or any MCP-compatible client.</div>
+      <div class="cap-value">One command to install. Zero API keys required. Built for Claude Code, where your AI already has access to your project, your draft, and your refs.bib.</div>
     </div>
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>COST</div>
@@ -884,6 +884,10 @@ body::after {
     <div class="cap-row">
       <div class="cap-label"><span class="pulse-marker"></span>TRUST</div>
       <div class="cap-value">Every result states its source. 4 databases cross-checked and deduplicated by DOI. Uncertainty flagged, never hidden. Your AI stops making things up.</div>
+    </div>
+    <div class="cap-row">
+      <div class="cap-label"><span class="pulse-marker"></span>REPRODUCIBLE</div>
+      <div class="cap-value">Every search and every paper considered is logged to <code style="color: var(--green); font-family: 'Share Tech Mono', monospace;">.scholark-1/session-log.md</code> in your project. Your literature trail, gitignored, in your repo. Answer reviewers, reflect on your own bias, and never wonder "did I look at that paper?" again.</div>
     </div>
   </div>
 
@@ -928,6 +932,20 @@ body::after {
     </div>
   </div>
 
+  <!-- Reproducibility artifact -->
+  <div class="setup-section">
+    <div class="tools-header">// .scholark-1/session-log.md</div>
+    <div class="setup-code">
+      <span class="comment"># Auto-maintained in your project root. A trail of what you actually considered.</span><br>
+      <span class="command">- 2026-05-02 14:31:07 | search_papers | "LLM hallucination detection 2023-2025": 8 papers (10.1145/3491102.3517582, 10.1109/...)</span><br>
+      <span class="command">- 2026-05-02 14:35:42 | fetch_paper_details | 10.1145/3491102.3517582: full metadata retrieved</span><br>
+      <span class="command">- 2026-05-02 14:42:18 | doi_to_bibtex | 10.1145/3491102.3517582: BibTeX returned, added to refs.bib</span><br>
+      <span class="command">- 2026-05-02 14:50:33 | search_by_topic | "estimation statistics in HCI" (2023-2025): 5 papers</span><br>
+      <span class="command">- 2026-05-02 15:02:51 | get_citation_context | 10.1145/3491102.3517582: 12 citing papers, 4 critical responses</span><br><br>
+      <span class="comment"># Reviewer 2: "you missed paper X". You: opens session-log.md, finds the entry, replies with confidence.</span>
+    </div>
+  </div>
+
   <!-- Setup -->
   <div class="setup-section">
     <div class="tools-header">// 2-STEP SETUP</div>
@@ -942,17 +960,18 @@ body::after {
   <!-- How to Use -->
   <div class="usage-section">
     <div class="tools-header">// HOW TO USE</div>
-    <div class="usage-intro">The straightforward way — just ask:</div>
+    <div class="usage-intro">Each prompt below maps to one or two tool calls. No orchestration needed. Just ask your AI:</div>
     <div class="usage-examples">
-      <div class="usage-example">"Find recent papers on retrieval-augmented generation"</div>
-      <div class="usage-example">"Get the BibTeX for 10.1145/3491102.3517582"</div>
-      <div class="usage-example">"Search for work on LLM hallucination detection from 2023–2025"</div>
+      <div class="usage-example">"Get the BibTeX for 10.1145/3491102.3517582 and add it to refs.bib"</div>
+      <div class="usage-example">"Find an open-access PDF for 10.1145/3411764.3445428"</div>
+      <div class="usage-example">"Read related-work.tex and find 5 recent papers from 2023–2025 I should cite"</div>
+      <div class="usage-example">"Show me how 10.1145/3411764.3445428 has been cited. Any critical responses?"</div>
+      <div class="usage-example">"Look up every DOI in refs.bib and flag any that don't resolve"</div>
+      <div class="usage-example">"Find survey papers on LLM hallucination detection from the last two years"</div>
     </div>
     <div class="usage-advanced">
-      <div class="usage-advanced-label">Beyond API calls</div>
-      <div class="usage-advanced-text">Agentic tools aren't fixed interfaces — they combine with what the AI already does well. Scholark gives real papers. The AI reads your work, reasons about it, and connects the two. Try pointing it at your manuscript:</div>
-      <div class="usage-prompt">"Read my paper.tex, identify 3 blind spots in the literature, use Scholark to find papers that address them, and generate a studyplan.html with clickable DOI links and notes on how each paper relates to what's missing"</div>
-      <div class="usage-advanced-text" style="margin-top: 16px; margin-bottom: 0;">The AI reads your argument, spots what's thin, searches real databases instead of hallucinating references, and gives you a browsable reading plan with clickable DOIs. Each component does what it's best at.</div>
+      <div class="usage-advanced-label">Want orchestrated workflows?</div>
+      <div class="usage-advanced-text">Scholark-1 gives your AI six stateless primitives. For multi-step research workflows (read my draft, find blind spots, generate a literature gap report, brainstorm with a divergent ideator and an adversarial critic), pair it with <a href="https://simohosio.com/scholark/" target="_blank" rel="noopener" style="color: var(--green); text-decoration: none; border-bottom: 1px dashed var(--green-dark);">Scholark</a>, the companion Claude Code plugin. Two researcher-shaped agents and six skills built on top of scholark-1's tools.</div>
     </div>
   </div>
 
@@ -966,7 +985,7 @@ body::after {
       <a href="https://github.com/SHosio/scholark-1" class="cta-command" id="cta-btn" onclick="ctaClick(event)">Install scholark-1</a>
       <div class="cta-secondary">
         No API keys required to start. All 5 core tools work immediately.<br>
-        Optional config unlocks open access PDFs and higher rate limits — <a href="https://github.com/SHosio/scholark-1#configuration" style="color: rgba(0, 204, 51, 0.7);">see README</a>.
+        Optional config unlocks open access PDFs and higher rate limits. <a href="https://github.com/SHosio/scholark-1#configuration" style="color: rgba(0, 204, 51, 0.7);">See README</a>.
       </div>
     </div>
   </div>
@@ -976,13 +995,13 @@ body::after {
     <div class="author">Built by <a href="https://simohosio.com" target="_blank" rel="noopener">Professor Simo Hosio</a></div>
     <div class="version">MIT LICENSE // STDIO TRANSPORT // OPEN SOURCE</div>
     <div>SCHOLARK-1 IS WATCHING THE LITERATURE SO YOU DON'T HAVE TO</div>
-    <div class="promo">Too busy to learn tools like this? You might be doing academia wrong.<br><a href="https://edgeacademia.com/powertrio" target="_blank" rel="noopener">PhD Power Trio Framework</a> — a better way to PhD.</div>
+    <div class="promo">Too busy to learn tools like this? You might be doing academia wrong.<br><a href="https://edgeacademia.com/powertrio" target="_blank" rel="noopener">PhD Power Trio Framework</a>. A better way to PhD.</div>
   </div>
 
 </div>
 
 <script>
-// CTA click handler — tracks interest, then redirects to GitHub
+// CTA click handler. Tracks interest, then redirects to GitHub.
 function ctaClick(e) {
   e.preventDefault();
   fetch(window.location.href, {
@@ -997,11 +1016,11 @@ function ctaClick(e) {
 const robotBtn = document.getElementById('robot-btn');
 const robotCounter = document.getElementById('robot-counter');
 
-// Common: +1 (85% chance) — science-adjacent
+// Common: +1 (85% chance). Science-adjacent.
 const common = ['📄', '📚', '🔬', '🧪', '📖', '🎓', '⚡', '🧠', '💡'];
-// Rare: +10 (12% chance) — absurd and unrelated
+// Rare: +10 (12% chance). Absurd and unrelated.
 const rare = ['🐸', '🦆', '🌮', '🍕', '🛸', '🦑', '🎺', '🗿', '🧲', '🫏', '🦩', '🥒'];
-// Legendary: +100 (3% chance) — absolutely unhinged
+// Legendary: +100 (3% chance). Absolutely unhinged.
 const legendary = ['🏆', '💎', '🌋', '🦖', '👑', '🍆', '🐉'];
 
 function rollDrop() {
