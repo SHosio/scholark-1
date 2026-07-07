@@ -44,6 +44,20 @@ def test_format_paper_includes_fields():
     assert "Yes" in result
 
 
+def test_format_paper_flags_preprint():
+    paper = _fake_epmc_paper()
+    paper["source"] = "PPR"
+    result = format_paper(paper)
+    assert "preprint (not peer reviewed)" in result
+
+
+def test_format_paper_no_preprint_line_for_journal_articles():
+    paper = _fake_epmc_paper()
+    paper["source"] = "MED"
+    result = format_paper(paper)
+    assert "preprint" not in result.lower()
+
+
 def test_format_paper_missing_fields():
     paper = {"title": "Minimal Paper"}
     result = format_paper(paper)

@@ -2,7 +2,7 @@
 
 import re
 import httpx
-from apis import make_request, make_request_text
+from apis import make_request, make_request_text, contact_email
 from apis.errors import SourceUnavailable, RateLimited
 
 BASE_URL = "https://api.crossref.org/works"
@@ -51,7 +51,16 @@ def normalize_doi(doi_input: str) -> str:
 
 
 async def _call_api(url, params=None):
-    """Call make_request, translate HTTP errors to custom exceptions."""
+    """Call make_request, translate HTTP errors to custom exceptions.
+
+    Sends a mailto param when a contact email is configured — this puts
+    requests in Crossref's polite pool (better rate limits and reliability).
+    """
+    email = contact_email("CROSSREF_MAILTO")
+    if email:
+        if params is None:
+            params = {}
+        params["mailto"] = email
     try:
         return await make_request(url, params=params)
     except httpx.HTTPStatusError as e:

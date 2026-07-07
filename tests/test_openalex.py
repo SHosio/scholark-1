@@ -1,7 +1,9 @@
 import pytest
 import httpx
 from unittest.mock import AsyncMock, patch
-from apis.openalex import search, get_paper_details, search_by_topic, format_paper
+from apis.openalex import (
+    search, get_paper_details, search_by_topic, format_paper, is_retracted,
+)
 from apis.errors import SourceUnavailable, RateLimited
 
 
@@ -103,6 +105,55 @@ async def test_get_paper_details_failure_raises():
             await get_paper_details("10.1234/bad")
 
 
+def test_format_paper_flags_preprint():
+    work = _fake_openalex_work()
+    work["type"] = "preprint"
+    result = format_paper(work)
+    assert "preprint (not peer reviewed)" in result
+
+
+def test_format_paper_no_preprint_line_for_articles():
+    work = _fake_openalex_work()
+    work["type"] = "article"
+    result = format_paper(work)
+    assert "preprint" not in result.lower()
+
+
+def test_format_paper_flags_retracted():
+    work = _fake_openalex_work()
+    work["is_retracted"] = True
+    result = format_paper(work)
+    assert "RETRACTED" in result
+
+
+def test_format_paper_no_retraction_line_when_not_retracted():
+    work = _fake_openalex_work()
+    work["is_retracted"] = False
+    result = format_paper(work)
+    assert "RETRACTED" not in result
+
+
+@pytest.mark.asyncio
+async def test_is_retracted_true():
+    with patch("apis.openalex.make_request", new_callable=AsyncMock) as mock:
+        mock.return_value = {"is_retracted": True}
+        assert await is_retracted("10.1234/test") is True
+
+
+@pytest.mark.asyncio
+async def test_is_retracted_false():
+    with patch("apis.openalex.make_request", new_callable=AsyncMock) as mock:
+        mock.return_value = {"is_retracted": False}
+        assert await is_retracted("10.1234/test") is False
+
+
+@pytest.mark.asyncio
+async def test_is_retracted_unavailable_returns_none():
+    with patch("apis.openalex.make_request", new_callable=AsyncMock) as mock:
+        mock.return_value = None
+        assert await is_retracted("10.1234/test") is None
+
+
 @pytest.mark.asyncio
 async def test_search_by_topic_with_year_filter():
     fake_resp = {"results": [_fake_openalex_work()]}
@@ -113,3 +164,14 @@ async def test_search_by_topic_with_year_filter():
         params = call_kwargs.kwargs.get("params") or call_kwargs[1].get("params")
         assert "publication_year:2020-2024" in str(params)
         assert "Spaced Repetition" in result
+
+
+@pytest.mark.asyncio
+async def test_search_sends_mailto_read_at_call_time(monkeypatch):
+    monkeypatch.setenv("OPENALEX_EMAIL", "polite@example.com")
+    fake_resp = {"results": [_fake_openalex_work()]}
+    with patch("apis.openalex.make_request", new_callable=AsyncMock) as mock:
+        mock.return_value = fake_resp
+        await search("test query")
+        params = mock.call_args.kwargs.get("params") or mock.call_args[1].get("params")
+        assert params.get("mailto") == "polite@example.com"

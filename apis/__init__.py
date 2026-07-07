@@ -1,9 +1,22 @@
 """Shared HTTP utilities for Scholark-1 API clients."""
 
+import os
+
 import httpx
 from typing import Any
 
 USER_AGENT = "scholark-1/1.0 (academic-research-mcp)"
+
+
+def contact_email(service_env: str) -> str:
+    """Resolve the contact email for a service's polite pool.
+
+    The service-specific variable (e.g. OPENALEX_EMAIL, CROSSREF_MAILTO,
+    UNPAYWALL_EMAIL) wins; SCHOLARK_CONTACT_EMAIL is the shared fallback so
+    users can set one email once. Read at call time, not import time, so
+    .env loading order and tests behave predictably.
+    """
+    return os.environ.get(service_env) or os.environ.get("SCHOLARK_CONTACT_EMAIL", "")
 
 
 async def make_request(

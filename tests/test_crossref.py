@@ -91,3 +91,14 @@ async def test_get_bibtex_failure_raises():
         mock.return_value = None
         with pytest.raises(SourceUnavailable):
             await get_bibtex("10.1234/bad")
+
+
+@pytest.mark.asyncio
+async def test_search_sends_mailto_when_contact_email_set(monkeypatch):
+    monkeypatch.setenv("SCHOLARK_CONTACT_EMAIL", "polite@example.com")
+    fake_resp = {"message": {"items": [{"title": ["A Paper"], "DOI": "10.1/x"}]}}
+    with patch("apis.crossref.make_request", new_callable=AsyncMock) as mock:
+        mock.return_value = fake_resp
+        await search("test query")
+        params = mock.call_args.kwargs.get("params") or mock.call_args[1].get("params")
+        assert params.get("mailto") == "polite@example.com"

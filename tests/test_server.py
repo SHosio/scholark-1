@@ -66,15 +66,62 @@ async def test_fetch_paper_details_fallback_chain():
     with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
          patch("apis.openalex.get_paper_details", new_callable=AsyncMock) as oa, \
          patch("apis.crossref.get_paper_details", new_callable=AsyncMock) as cr, \
+         patch("apis.openalex.is_retracted", new_callable=AsyncMock) as retr, \
          patch("server._get_cache") as get_cache_mock:
         get_cache_mock.return_value.get.return_value = None
         ss.side_effect = SourceUnavailable("Semantic Scholar", "no data")
         oa.side_effect = SourceUnavailable("OpenAlex", "no data")
         cr.return_value = "**Test Paper**\n  [Source: Crossref]"
+        retr.return_value = False
 
         from server import fetch_paper_details
         result = await fetch_paper_details("10.1234/test")
         assert "Crossref" in result
+
+
+@pytest.mark.asyncio
+async def test_fetch_paper_details_flags_retracted_doi():
+    """A retracted DOI gets a prominent retraction alert regardless of source."""
+    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.is_retracted", new_callable=AsyncMock) as retr, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        ss.return_value = "**Test Paper**\n  [Source: Semantic Scholar]"
+        retr.return_value = True
+
+        from server import fetch_paper_details
+        result = await fetch_paper_details("10.1234/test")
+        assert "RETRACT" in result.upper()
+
+
+@pytest.mark.asyncio
+async def test_fetch_paper_details_reports_clean_retraction_check():
+    """A non-retracted DOI notes that the retraction check came back clean."""
+    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.is_retracted", new_callable=AsyncMock) as retr, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        ss.return_value = "**Test Paper**\n  [Source: Semantic Scholar]"
+        retr.return_value = False
+
+        from server import fetch_paper_details
+        result = await fetch_paper_details("10.1234/test")
+        assert "no retraction record" in result
+
+
+@pytest.mark.asyncio
+async def test_fetch_paper_details_retraction_check_unavailable():
+    """If OpenAlex can't be reached, the retraction status is reported as unverified."""
+    with patch("apis.semantic_scholar.get_paper_details", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.is_retracted", new_callable=AsyncMock) as retr, \
+         patch("server._get_cache") as get_cache_mock:
+        get_cache_mock.return_value.get.return_value = None
+        ss.return_value = "**Test Paper**\n  [Source: Semantic Scholar]"
+        retr.return_value = None
+
+        from server import fetch_paper_details
+        result = await fetch_paper_details("10.1234/test")
+        assert "could not verify" in result.lower()
 
 
 @pytest.mark.asyncio
@@ -92,13 +139,16 @@ async def test_fetch_paper_details_no_fallback_for_non_doi():
 
 @pytest.mark.asyncio
 async def test_fetch_paper_details_cache_hit():
-    """Cache hit returns cached value without calling APIs."""
-    with patch("server._get_cache") as get_cache_mock:
+    """Cache hit returns cached metadata but still runs a fresh retraction check."""
+    with patch("server._get_cache") as get_cache_mock, \
+         patch("apis.openalex.is_retracted", new_callable=AsyncMock) as retr:
         get_cache_mock.return_value.get.return_value = "**Cached Paper**\n  [Source: Semantic Scholar]"
+        retr.return_value = True
 
         from server import fetch_paper_details
         result = await fetch_paper_details("10.1234/test")
         assert "Cached Paper" in result
+        assert "RETRACT" in result.upper()
 
 
 @pytest.mark.asyncio
@@ -116,16 +166,52 @@ async def test_doi_to_bibtex_with_cache():
 
 
 @pytest.mark.asyncio
-async def test_search_by_topic_fallback_chain():
-    """search_by_topic: SS → OpenAlex (with year filter) → Crossref."""
+async def test_search_by_topic_combines_sources():
+    """search_by_topic queries all year-capable sources in parallel."""
     with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss, \
-         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa:
+         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa, \
+         patch("apis.pubmed.search_by_topic", new_callable=AsyncMock) as pm:
+        ss.return_value = "**Paper A**\n  DOI: 10.1000/ss\n  [Source: Semantic Scholar]"
+        oa.return_value = "**Paper B**\n  DOI: 10.1000/oa\n  [Source: OpenAlex]"
+        pm.return_value = "**Paper C**\n  DOI: 10.1000/pm\n  [Source: Europe PMC]"
+
+        from server import search_by_topic
+        result = await search_by_topic("HCI design", year_start=2020)
+        assert "Paper A" in result
+        assert "Paper B" in result
+        assert "Paper C" in result
+
+
+@pytest.mark.asyncio
+async def test_search_by_topic_handles_source_failure():
+    """If one topic source fails, the others still show."""
+    with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa, \
+         patch("apis.pubmed.search_by_topic", new_callable=AsyncMock) as pm:
         ss.side_effect = RateLimited("Semantic Scholar")
-        oa.return_value = "**Paper B**\n  [Source: OpenAlex]"
+        oa.return_value = "**Paper B**\n  DOI: 10.1000/oa\n  [Source: OpenAlex]"
+        pm.return_value = "**Paper C**\n  DOI: 10.1000/pm\n  [Source: Europe PMC]"
 
         from server import search_by_topic
         result = await search_by_topic("HCI design", year_start=2020)
         assert "OpenAlex" in result
+        assert "Europe PMC" in result
+
+
+@pytest.mark.asyncio
+async def test_search_by_topic_deduplicates():
+    """Duplicate DOIs across topic sources are removed."""
+    with patch("apis.semantic_scholar.search_by_topic", new_callable=AsyncMock) as ss, \
+         patch("apis.openalex.search_by_topic", new_callable=AsyncMock) as oa, \
+         patch("apis.pubmed.search_by_topic", new_callable=AsyncMock) as pm:
+        ss.return_value = "**Paper A**\n  DOI: 10.1000/same\n  [Source: Semantic Scholar]"
+        oa.return_value = "**Paper A copy**\n  DOI: 10.1000/same\n  [Source: OpenAlex]"
+        pm.side_effect = SourceUnavailable("Europe PMC", "no results")
+
+        from server import search_by_topic
+        result = await search_by_topic("HCI design")
+        assert "duplicate" in result.lower()
+        assert "Paper A copy" not in result
 
 
 @pytest.mark.asyncio

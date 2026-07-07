@@ -23,8 +23,11 @@ def format_paper(paper: dict, compact: bool = False) -> str:
     citations = paper.get("citedByCount", "Unknown")
     is_open = "Yes" if paper.get("isOpenAccess") == "Y" else "No"
 
-    lines = [
-        f"**{title}**",
+    lines = [f"**{title}**"]
+    # Europe PMC marks preprint records with source "PPR"
+    if paper.get("source") == "PPR":
+        lines.append("  Type: preprint (not peer reviewed)")
+    lines.extend([
         f"  Authors: {authors}",
         f"  Year: {year}",
         f"  DOI: {doi}",
@@ -33,7 +36,7 @@ def format_paper(paper: dict, compact: bool = False) -> str:
         f"  Venue: {venue}",
         f"  Citations: {citations}",
         f"  Open Access: {is_open}",
-    ]
+    ])
     if not compact:
         abstract = paper.get("abstractText") or "Not available"
         lines.append(f"  Abstract: {abstract}")

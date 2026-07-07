@@ -4,9 +4,8 @@ Uses the Unpaywall API (unpaywall.org) to find open access versions of papers by
 Free to use, requires an email address. No API key needed.
 """
 
-import os
 import httpx
-from apis import make_request
+from apis import make_request, contact_email
 from apis.errors import SourceUnavailable
 
 BASE_URL = "https://api.unpaywall.org/v2"
@@ -14,7 +13,7 @@ BASE_URL = "https://api.unpaywall.org/v2"
 
 def _get_email() -> str:
     """Get email for Unpaywall API. Required for all requests."""
-    email = os.environ.get("UNPAYWALL_EMAIL", "")
+    email = contact_email("UNPAYWALL_EMAIL")
     if not email:
         raise SourceUnavailable("Unpaywall", "no email configured (set UNPAYWALL_EMAIL)")
     return email

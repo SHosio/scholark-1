@@ -1,13 +1,10 @@
 """OpenAlex API client for Scholark-1."""
 
-import os
 import httpx
-from apis import make_request
+from apis import make_request, contact_email
 from apis.errors import SourceUnavailable, RateLimited
 
 BASE_URL = "https://api.openalex.org/works"
-
-_EMAIL = os.environ.get("OPENALEX_EMAIL", "")
 
 
 def _reconstruct_abstract(inverted_index: dict | None) -> str:
@@ -20,6 +17,22 @@ def _reconstruct_abstract(inverted_index: dict | None) -> str:
             word_positions.append((pos, word))
     word_positions.sort()
     return " ".join(word for _, word in word_positions)
+
+
+async def is_retracted(doi: str) -> bool | None:
+    """Check whether OpenAlex marks a DOI as retracted.
+
+    Returns True/False, or None when the status could not be determined
+    (work not in OpenAlex, or OpenAlex unavailable). Uses a select query so
+    the response is tiny.
+    """
+    try:
+        data = await _call_api(f"{BASE_URL}/doi:{doi}", params={"select": "is_retracted"})
+    except (SourceUnavailable, RateLimited):
+        return None
+    if not data or "is_retracted" not in data:
+        return None
+    return bool(data["is_retracted"])
 
 
 def format_paper(work: dict, compact: bool = False) -> str:
@@ -39,15 +52,19 @@ def format_paper(work: dict, compact: bool = False) -> str:
     oa = work.get("open_access") or {}
     is_open = "Yes" if oa.get("is_oa") else "No"
 
-    lines = [
-        f"**{title}**",
+    lines = [f"**{title}**"]
+    if work.get("is_retracted"):
+        lines.append("  ⚠ RETRACTED (per OpenAlex) — do not cite as valid evidence")
+    if work.get("type") == "preprint":
+        lines.append("  Type: preprint (not peer reviewed)")
+    lines.extend([
         f"  Authors: {authors or 'Not available'}",
         f"  Year: {year}",
         f"  DOI: {doi}",
         f"  Venue: {venue}",
         f"  Citations: {citations}",
         f"  Open Access: {is_open}",
-    ]
+    ])
     if not compact:
         abstract = _reconstruct_abstract(work.get("abstract_inverted_index"))
         lines.append(f"  Abstract: {abstract}")
@@ -57,10 +74,11 @@ def format_paper(work: dict, compact: bool = False) -> str:
 
 async def _call_api(url, params=None):
     """Call make_request, translate HTTP errors to custom exceptions."""
-    if _EMAIL:
+    email = contact_email("OPENALEX_EMAIL")
+    if email:
         if params is None:
             params = {}
-        params["mailto"] = _EMAIL
+        params["mailto"] = email
     try:
         return await make_request(url, params=params)
     except httpx.HTTPStatusError as e:

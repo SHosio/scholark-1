@@ -28,6 +28,11 @@ mcp = FastMCP(
         "source provided each result. If data is missing or a fallback source was used, "
         "say so explicitly. Never present these results as exhaustive — recommend the "
         "user verify important findings manually.\n\n"
+        "RETRACTIONS: fetch_paper_details cross-checks every DOI against OpenAlex's "
+        "retraction flag, and search results may carry a RETRACTED marker. If any result "
+        "contains a retraction alert, surface it to the user prominently and immediately — "
+        "never bury it, summarize it away, or present a retracted paper as citable "
+        "evidence.\n\n"
         "CRITICAL — METADATA INTEGRITY: Never silently override, correct, or substitute "
         "metadata returned by these tools (author names, titles, dates) with your own "
         "knowledge. The API data is authoritative. If a returned author name differs from "
@@ -111,6 +116,24 @@ async def _try_source(source_fn, name, query, limit, compact=False):
         return f"=== {name} ===\n{name} unavailable ({e.reason})."
 
 
+async def _retraction_note(doi: str) -> str:
+    """Cross-check a DOI against OpenAlex's retraction flag.
+
+    Always run fresh (never cached) — retraction status can change after a
+    paper's metadata was cached.
+    """
+    retracted = await openalex.is_retracted(doi)
+    if retracted is True:
+        return (
+            "⚠ RETRACTION ALERT: OpenAlex marks this paper as RETRACTED. "
+            "Do not cite it as valid evidence. Verify at the publisher page "
+            "or Retraction Watch before any use."
+        )
+    if retracted is False:
+        return "Retraction check (OpenAlex): no retraction record found."
+    return "Retraction check: could not verify (paper not in OpenAlex or OpenAlex unavailable)."
+
+
 @mcp.tool()
 async def search_papers(query: str, limit: int = 5) -> str:
     """Search for academic papers across multiple databases.
@@ -166,7 +189,12 @@ async def fetch_paper_details(paper_id: str) -> str:
     if is_doi:
         cached = cache.get(f"paper_details:{normalized_id}")
         if cached:
-            return cached + "\n\n---\nNote: Cached result. Verify against the original publication."
+            retraction = await _retraction_note(normalized_id)
+            return (
+                cached
+                + f"\n\n{retraction}"
+                + "\n\n---\nNote: Cached result. Verify against the original publication."
+            )
 
     # Sequential fallback chain
     fallback_chain = [
@@ -186,7 +214,11 @@ async def fetch_paper_details(paper_id: str) -> str:
             query_id = normalized_id if is_doi and name != "Semantic Scholar" else paper_id
             result = await source_fn(query_id)
             if is_doi:
+                # Cache the metadata only; the retraction check runs fresh on
+                # every call because retraction status can change.
                 cache.put(f"paper_details:{normalized_id}", result, name)
+                retraction = await _retraction_note(normalized_id)
+                result = result + f"\n\n{retraction}"
             fallback_note = " (fallback)" if name != "Semantic Scholar" else ""
             return (
                 result + f"\n\n---\nNote: Data from {name}{fallback_note}. Verify against the original publication."
@@ -217,50 +249,59 @@ async def search_by_topic(
 ) -> str:
     """Search for papers by topic with optional year range filtering.
 
-    Sequential fallback: Semantic Scholar, OpenAlex, Europe PMC (all support
-    year filtering), then Crossref (no year filtering).
+    Searches Semantic Scholar, OpenAlex, and Europe PMC in parallel (all
+    support year filtering); results are deduplicated by DOI across sources.
+    Falls back to Crossref (no year filtering) only if all three are
+    unavailable.
 
     Args:
         topic: Research topic or keywords
         year_start: Start year filter (optional)
         year_end: End year filter (optional)
-        limit: Max results (default 5)
+        limit: Max results per source (default 5)
     """
-    # Sources that support year filtering
-    year_sources = [
-        (semantic_scholar.search_by_topic, "Semantic Scholar"),
-        (openalex.search_by_topic, "OpenAlex"),
-        (pubmed.search_by_topic, "Europe PMC"),
-    ]
-
-    for source_fn, name in year_sources:
+    async def _try_topic_source(source_fn, name):
         try:
             result = await source_fn(
                 topic, year_start=year_start, year_end=year_end, limit=limit, compact=True
             )
-            fallback_note = " (fallback)" if name != "Semantic Scholar" else ""
-            return result + (
-                f"\n\n---\nNote: Results from {name}{fallback_note}. "
-                "May not be exhaustive — verify important references."
+            return f"=== {name} Results ===\n\n{result}"
+        except SourceUnavailable as e:
+            return f"=== {name} ===\n{name} unavailable ({e.reason})."
+
+    results = await asyncio.gather(
+        _try_topic_source(semantic_scholar.search_by_topic, "Semantic Scholar"),
+        _try_topic_source(openalex.search_by_topic, "OpenAlex"),
+        _try_topic_source(pubmed.search_by_topic, "Europe PMC"),
+    )
+
+    # Crossref fallback only when every year-capable source came back empty
+    all_unavailable = all("unavailable" in section for section in results)
+    if all_unavailable:
+        try:
+            result = await crossref.search(topic, limit=limit, compact=True)
+            note = "(Crossref fallback"
+            if year_start or year_end:
+                note += " — year filtering not applied"
+            note += ")"
+            return (
+                f"{note}\n\n{result}\n\n---\n"
+                "Note: Results from Crossref fallback. Verify important references."
             )
         except SourceUnavailable:
-            continue
+            return "No sources returned results for this topic."
 
-    # Crossref last — no year filtering
-    try:
-        result = await crossref.search(topic, limit=limit, compact=True)
-        note = "(Crossref fallback"
-        if year_start or year_end:
-            note += " — year filtering not applied"
-        note += ")"
-        return (
-            f"{note}\n\n{result}\n\n---\n"
-            "Note: Results from Crossref fallback. Verify important references."
-        )
-    except SourceUnavailable:
-        pass
+    sections, dupes_removed = _deduplicate_results(list(results))
 
-    return "No sources returned results for this topic."
+    note = (
+        "---\nNote: Results from Semantic Scholar, OpenAlex, and Europe PMC. "
+        "These may not be exhaustive. Verify important references manually."
+    )
+    if dupes_removed:
+        note += f"\n({dupes_removed} duplicate paper(s) removed across sources.)"
+
+    sections.append(note)
+    return "\n\n".join(sections)
 
 
 @mcp.tool()

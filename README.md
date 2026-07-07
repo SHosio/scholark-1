@@ -14,6 +14,8 @@ Your AI assistant is brilliant at reasoning, but it can't search academic databa
 
 - **4 databases searched in parallel** — Semantic Scholar, OpenAlex, Crossref, and Europe PMC
 - **Deduplicated by DOI** — the same paper from different sources appears once, not four times
+- **Retraction alerts** — every paper you fetch details for is cross-checked against OpenAlex's retraction flag, so you never unknowingly cite retracted work
+- **Preprints labeled** — results that are preprints say so, because peer-review status matters when you cite
 - **Every result cites its source** — you always know where data came from
 - **BibTeX on demand** — any DOI to a BibTeX entry, ready for your .tex file
 - **Open access PDFs** — finds free, legal versions of papers via Unpaywall
@@ -49,8 +51,8 @@ That's it. Ask your AI assistant to search for papers and it will use Scholark a
 | Tool | What it does |
 |---|---|
 | `search_papers` | Search 4 databases in parallel, deduplicated by DOI |
-| `fetch_paper_details` | Deep metadata with 4-source fallback chain |
-| `search_by_topic` | Topic search with optional year range filtering |
+| `fetch_paper_details` | Deep metadata with 4-source fallback chain and a retraction check on every DOI |
+| `search_by_topic` | Topic search with year filtering across 3 databases in parallel, deduplicated by DOI |
 | `doi_to_bibtex` | Any DOI to a BibTeX entry — ready for your .bib file |
 | `find_open_access` | Find free, legal PDFs via Unpaywall |
 | `get_citation_context` | The actual sentences where other papers cite a work |
@@ -61,9 +63,9 @@ All configuration is optional. Without any config, 5 of 6 tools work immediately
 
 | Variable | Required? | What it does | How to get it |
 |---|---|---|---|
-| `UNPAYWALL_EMAIL` | For `find_open_access` | Enables open access PDF lookup | Just your email |
+| `SCHOLARK_CONTACT_EMAIL` | No, but recommended | One email for all polite pools (OpenAlex, Crossref, Unpaywall) — fewer rate limits, and it unlocks `find_open_access` | Just your email |
 | `SEMANTIC_SCHOLAR_API_KEY` | No | Higher rate limits | [Free key](https://www.semanticscholar.org/product/api#api-key) |
-| `OPENALEX_EMAIL` | No | Priority request queue | Just your email |
+| `OPENALEX_EMAIL`, `CROSSREF_MAILTO`, `UNPAYWALL_EMAIL` | No | Per-service overrides; each falls back to `SCHOLARK_CONTACT_EMAIL` | Just your email |
 
 Pass env vars with `-e` when installing:
 
@@ -85,7 +87,7 @@ claude mcp add -s project scholark-1 -- uv run --project /path/to/scholark-1 sch
 
 **Without any config:** `search_papers`, `fetch_paper_details`, `search_by_topic`, `doi_to_bibtex`, and `get_citation_context` all work. You get results from Semantic Scholar, OpenAlex, Crossref, and Europe PMC.
 
-**Add your email for Unpaywall:** Unlocks `find_open_access` — no signup, no API key, just an email address for contact purposes.
+**Add one email (`SCHOLARK_CONTACT_EMAIL`):** Unlocks `find_open_access` and puts your requests in the OpenAlex and Crossref polite pools — no signup, no API key, just an email address for contact purposes.
 
 **Add a Semantic Scholar API key:** Free to request, gives you a dedicated rate limit instead of sharing the pool.
 
@@ -144,8 +146,9 @@ You can also allow `WebFetch` and `WebSearch` if you want the AI to follow DOI l
 
 Scholark searches multiple academic databases and combines results intelligently:
 
-- **Search** — queries all 4 sources in parallel via `asyncio.gather`
+- **Search** — queries all 4 sources in parallel via `asyncio.gather`; topic search queries the 3 year-capable sources in parallel
 - **Deduplication** — removes duplicate papers across sources by DOI (first source wins)
+- **Retraction check** — every `fetch_paper_details` call cross-checks the DOI against OpenAlex's retraction flag, fresh on every call (never cached), and search results carry a RETRACTED marker when OpenAlex flags them
 - **Fallback** — if one source is down, the others still work. Errors are reported, never hidden.
 - **Caching** — paper details and BibTeX entries are cached in SQLite with TTL (30-day details, 90-day BibTeX)
 - **Attribution** — every result includes `[Source: ...]` so you know where it came from

@@ -104,3 +104,26 @@ async def test_make_request_text_http_error_raises():
 
         with pytest.raises(httpx.HTTPStatusError):
             await make_request_text("https://doi.org/10.1234/test")
+
+
+# --- contact_email fallback chain ---
+
+def test_contact_email_specific_var_wins(monkeypatch):
+    from apis import contact_email
+    monkeypatch.setenv("OPENALEX_EMAIL", "specific@example.com")
+    monkeypatch.setenv("SCHOLARK_CONTACT_EMAIL", "shared@example.com")
+    assert contact_email("OPENALEX_EMAIL") == "specific@example.com"
+
+
+def test_contact_email_falls_back_to_shared(monkeypatch):
+    from apis import contact_email
+    monkeypatch.delenv("OPENALEX_EMAIL", raising=False)
+    monkeypatch.setenv("SCHOLARK_CONTACT_EMAIL", "shared@example.com")
+    assert contact_email("OPENALEX_EMAIL") == "shared@example.com"
+
+
+def test_contact_email_empty_when_unset(monkeypatch):
+    from apis import contact_email
+    monkeypatch.delenv("CROSSREF_MAILTO", raising=False)
+    monkeypatch.delenv("SCHOLARK_CONTACT_EMAIL", raising=False)
+    assert contact_email("CROSSREF_MAILTO") == ""
